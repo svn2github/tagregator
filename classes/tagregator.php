@@ -114,6 +114,7 @@ if ( ! class_exists( 'Tagregator' ) ) {
 			add_action( 'init',                  array( $this, 'upgrade' ), 11 );
 			add_action( 'wp_enqueue_scripts',    __CLASS__ . '::load_resources' );
 			add_action( 'admin_enqueue_scripts', __CLASS__ . '::load_resources' );
+			add_filter( 'wp_link_query_args',   'TGGRMediaSource::exclude_from_insert_link_results' );
 		}
 
 		/**

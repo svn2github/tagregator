@@ -73,6 +73,27 @@ if ( ! class_exists( 'TGGRMediaSource' ) ) {
 		}
 
 		/**
+		 * Remove our post types from search results in the `Insert/Edit Link` dialog.
+		 *
+		 * The posts aren't intended to be used in this way, and their presense makes the list cluttered.
+		 *
+		 * @param WP_Query $query
+		 *
+		 * @return WP_Query
+		 */
+		public static function exclude_from_insert_link_results( $query ) {
+			$excluded_types = array();
+
+			foreach( Tagregator::get_instance()->media_sources as $source ) {
+				$excluded_types[] = $source::POST_TYPE_SLUG;
+			}
+
+			$query['post_type'] = array_diff( $query['post_type'], $excluded_types );
+
+			return $query;
+		}
+
+		/**
 		 * Registers the custom taxonomies
 		 * @mvc Controller
 		 */
@@ -337,13 +358,13 @@ if ( ! class_exists( 'TGGRMediaSource' ) ) {
 
 			return $post_timestamp_local;
 		}
-		
+
 		/**
 		 * Retrieves the latest post mapped to a given hashtag
 		 * @mvc Model
-		 * 
+		 *
 		 * @param $hashtag
-		 * @return object|false 
+		 * @return object|false
 		 */
 		protected static function get_latest_hashtagged_post( $post_type, $hashtag ) {
 			$latest_post = false;
@@ -362,12 +383,12 @@ if ( ! class_exists( 'TGGRMediaSource' ) ) {
 						),
 					)
 				) );
-				
+
 				if ( isset( $latest_post[0]->ID ) ) {
 					$latest_post = $latest_post[0];
 				}
 			}
-			
+
 			return $latest_post;
 		}
 
