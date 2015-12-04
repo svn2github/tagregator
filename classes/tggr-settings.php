@@ -125,7 +125,7 @@ if ( ! class_exists( 'TGGRSettings' ) ) {
 		 * @return array
 		 */
 		public static function add_plugin_action_links( $links ) {
-			array_unshift( $links, '<a href="http://wordpress.org/plugins/tagregator/faq/">Help</a>' );
+			array_unshift( $links, '<a href="https://wordpress.org/plugins/tagregator/faq/">Help</a>' );
 			array_unshift( $links, '<a href="admin.php?page=' . self::SETTING_SLUG .'">Settings</a>' );
 
 			return $links;

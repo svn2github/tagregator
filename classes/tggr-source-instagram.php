@@ -235,7 +235,7 @@ if ( ! class_exists( 'TGGRSourceInstagram' ) ) {
 			$post = get_post();
 
 			if ( isset( $post->post_type ) && self::POST_TYPE_SLUG == $post->post_type ) {
-				$content = preg_replace( "/@(\w+)/", "<a href=\"http://instagram.com/\\1\" class=\"". self::POST_TYPE_SLUG ."-username\">@\\1</a>", $content );
+				$content = preg_replace( "/@(\w+)/", "<a href=\"https://instagram.com/\\1\" class=\"". self::POST_TYPE_SLUG ."-username\">@\\1</a>", $content );
 			}
 
 			return $content;

@@ -11,5 +11,5 @@
 		</li>
 	</ul>
 
-	<p>If you need to upgrade your version of PHP you can ask your hosting company for assistance, and if you need help upgrading WordPress you can refer to <a href="http://codex.wordpress.org/Upgrading_WordPress">the Codex</a>.</p>
+	<p>If you need to upgrade your version of PHP you can ask your hosting company for assistance, and if you need help upgrading WordPress you can refer to <a href="https://codex.wordpress.org/Upgrading_WordPress">the Codex</a>.</p>
 </div>

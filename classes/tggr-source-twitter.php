@@ -293,7 +293,7 @@ if ( ! class_exists( 'TGGRSourceTwitter' ) ) {
 						'author_name'      => sanitize_text_field( $item->user->name ),
 						'author_username'  => sanitize_text_field( $item->user->screen_name ),
 						'author_url'       => isset( $item->user->entities->url->urls[0]->expanded_url ) ? esc_url( $item->user->entities->url->urls[0]->expanded_url ) : '',
-						'author_image_url' => esc_url( $item->user->profile_image_url ),
+						'author_image_url' => esc_url( $item->user->profile_image_url_https ),
 						'media'            => array(),
 					);
 
@@ -302,7 +302,7 @@ if ( ! class_exists( 'TGGRSourceTwitter' ) ) {
 							if ( 'photo' == $media_item->type ) {
 								$post_meta['media'][] = array(
 									'id'   => sanitize_text_field( $media_item->id_str ),
-									'url'  => esc_url_raw( $media_item->media_url ),
+									'url'  => esc_url_raw( $media_item->media_url_https ),
 									'type' => 'image',
 								);
 							}

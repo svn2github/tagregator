@@ -23,13 +23,13 @@ Tagregator lets you add a shortcode to a post or page on your site, and pull in 
 
 == Installation ==
 
-For help installing this (or any other) WordPress plugin, please read the [Managing Plugins](http://codex.wordpress.org/Managing_Plugins) article on the Codex.
+For help installing this (or any other) WordPress plugin, please read the [Managing Plugins](https://codex.wordpress.org/Managing_Plugins) article on the Codex.
 
 **Step 1)** After installing the plugin, go to the Tagregator > Settings screen and enter the credentials for the services you want to use.
 
 When <a href="https://dev.twitter.com/apps/new">creating a Twitter application</a>, you should enter the URL of your website in the "Website" field (e.g., `http://www.example.org`), and then leave the "Callback URL" field empty. Once the application is created, copy the Consumer Key and Consumer Secret into Tagregator's settings.
 
-**Step 2)** [Add the [tagregator] shortcode to a post or page](http://codex.wordpress.org/Shortcode), and include the hashtag(s) you want to aggregate:
+**Step 2)** [Add the [tagregator] shortcode to a post or page](https://codex.wordpress.org/Shortcode), and include the hashtag(s) you want to aggregate:
 
 Examples:
 
@@ -86,9 +86,9 @@ If you find a security issue, please disclose it to us privately via [Automattic
 = Can I create my own media sources for services that aren't included (e.g, Facebook, Vine, etc) =
 Yes, Tagregator allows you to add custom modules that you develop for other services by hooking into the `tggr_media_sources` filter and adding an instance of your class.
 
-The best way to get started is by [downloading the example plugin](http://plugins.svn.wordpress.org/tagregator/assets/tagregator-custom-media-source-example.zip) and customizing it to fit your needs.
+The best way to get started is by [downloading the example plugin](https://plugins.svn.wordpress.org/tagregator/assets/tagregator-custom-media-source-example.zip) and customizing it to fit your needs.
 
-Once you're done, please consider sharing it with others by [submitting it to the WordPress.org repository](http://wordpress.org/plugins/about/).
+Once you're done, please consider sharing it with others by [submitting it to the WordPress.org repository](https://wordpress.org/plugins/about/).
 
 == Screenshots ==
 
