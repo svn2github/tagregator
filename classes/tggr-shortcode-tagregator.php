@@ -224,7 +224,7 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 				sem_acquire( $semaphore_id );
 			}
 
-			$last_fetch = get_transient( Tagregator::PREFIX . 'last_media_fetch', 0 );
+			$last_fetch = get_transient( Tagregator::PREFIX . 'last_media_fetch' );
 
 			if ( 'ignore' == $rate_limit || self::refresh_interval_elapsed( $last_fetch, $this->refresh_interval ) ) {
 				set_transient( Tagregator::PREFIX . 'last_media_fetch', microtime( true ) );	// do this right away to minimize the chance of race conditions on systems that don't support the Semaphore module
