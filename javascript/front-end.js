@@ -2,11 +2,9 @@
  * @package Tagregator
  */
 
+( function( $ ) {
+	'use strict';
 
-/**
- * Wrapper function to safely use $
- */
-function tggrWrapper( $ ) {
 	var tggr = {
 
 		/**
@@ -81,7 +79,7 @@ function tggrWrapper( $ ) {
 		 * Retrieve new posts and schedule automatic retrieves in the future
 		 *
 		 * It's possible for this to get called multiple times, so we won't set an interval if we already have one.
-		 * Otherwise only one of them would get cleared and the page would continue to load new pots when we don't
+		 * Otherwise only one of them would get cleared and the page would continue to load new posts when we don't
 		 * want it to.
 		 */
 		enableRetrieval : function() {
@@ -101,10 +99,8 @@ function tggrWrapper( $ ) {
 		 * So, when they scroll past the "Loading new posts" spinner, we stop retrieving new items. When they scroll
 		 * back above it, we immediately retrieve new items and re-establish the interval to automatically load them
 		 * in the future.
-		 *
-		 * @param {object} event
 		 */
-		toggleRetrieval : function( event ) {
+		toggleRetrieval : function() {
 			var newState = tggr.isScrolledIntoView( tggr.loadingNewPosts );
 
 			if ( tggr.loadingNewPostsVisible && ! newState ) {
@@ -120,13 +116,13 @@ function tggrWrapper( $ ) {
 		/**
 		 * Builds an array of which item IDs are already present in the DOM
 		 *
-		 * @return {array}
+		 * @return {Array}
 		 */
 		getExistingItemIDs : function() {
 			var itemIDs = [];
 
 			$( tggr.mediaItemContainer ).children( tggr.mediaItem ).each( function() {
-				itemIDs.push( parseInt( $( this ).attr( 'id' ).replace( tggr.cssPrefix, '' ) ) );
+				itemIDs.push( parseInt( $( this ).attr( 'id' ).replace( tggr.cssPrefix, '' ), 10 ) );
 			} );
 
 			return itemIDs;
@@ -147,11 +143,11 @@ function tggrWrapper( $ ) {
 				tggrData.ajaxPostURL, {
 					'action'          : tggr.prefix + 'render_latest_media_items',
 					'hashtag'         : tggrData.hashtag,
-					'existingItemIDs' :	tggr.existingItemIDs
+					'existingItemIDs' : tggr.existingItemIDs
 				},
 
 				function( response ) {
-					if ( response.hasOwnProperty( 'success' ) && true === response.success && 0 != response.data ) {
+					if ( response.hasOwnProperty( 'success' ) && true === response.success && 0 !== response.data ) {
 						tggr.refreshContent( response.data );
 					}
 
@@ -203,6 +199,4 @@ function tggrWrapper( $ ) {
 
 	$( document ).ready( tggr.init );
 
-} // end tggr_wrapper()
-
-tggrWrapper( jQuery );
+} )( jQuery );
