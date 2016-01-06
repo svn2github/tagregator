@@ -136,7 +136,7 @@ if ( ! class_exists( 'TGGRSettings' ) ) {
 		 * @mvc Controller
 		 */
 		public static function register_settings_pages() {
-			add_menu_page(
+			add_object_page(
 				TGGR_NAME,
 				TGGR_NAME,
 				self::REQUIRED_CAPABILITY,
