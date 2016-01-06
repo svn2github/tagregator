@@ -141,7 +141,8 @@ if ( ! class_exists( 'TGGRSettings' ) ) {
 				TGGR_NAME,
 				self::REQUIRED_CAPABILITY,
 				self::MENU_SLUG,
-				__CLASS__ . '::markup_settings_page'
+				__CLASS__ . '::markup_settings_page',
+				'dashicons-share'
 			);
 
 			add_submenu_page(
