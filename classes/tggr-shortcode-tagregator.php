@@ -127,10 +127,10 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 			};
 			
 			$logos = array(
-				'twitter'   => plugins_url( 'images/source-logos/twitter.png',     dirname( __DIR__ ) ),
-				'instagram' => plugins_url( 'images/source-logos/instagram.png',   dirname( __DIR__ ) ),
-				'flickr'    => plugins_url( 'images/source-logos/flickr.png',      dirname( __DIR__ ) ),
-				'google'    => plugins_url( 'images/source-logos/google-plus.png', dirname( __DIR__ ) ),
+				'twitter'   => plugins_url( 'images/source-logos/twitter.png',     __DIR__ ),
+				'instagram' => plugins_url( 'images/source-logos/instagram.png',   __DIR__ ),
+				'flickr'    => plugins_url( 'images/source-logos/flickr.png',      __DIR__ ),
+				'google'    => plugins_url( 'images/source-logos/google-plus.png', __DIR__ ),
 			);
 
 			ob_start();
