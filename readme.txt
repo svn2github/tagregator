@@ -1,5 +1,5 @@
 === Tagregator ===
-Contributors:      wordpressdotorg, iandunn, shaunandrews, ryelle, melchoyce
+Contributors:      wordpressdotorg, iandunn, ryelle, shaunandrews, melchoyce
 Donate link:       http://wordpressfoundation.org
 Tags:              hashtag, social media, aggregation, stream, twitter, instagram, flickr, google+, google plus
 Requires at least: 3.9
@@ -98,6 +98,19 @@ Once you're done, please consider sharing it with others by [submitting it to th
 
 
 == Changelog ==
+
+= v0.7 () =
+* [NEW] Switch interface to use REST API and React. Huge props to @ryelle.
+* [NEW] Added ability to ignore tweets from specific users. props @ryelle.
+* [NEW] Added ability to sort by author in wp-admin. props @ryelle.
+* [FIX] Updated code to account for breaking change in Instagram API.
+* [FIX] Updated code to account for breaking change in Google+ API.
+* [FIX] Added missing `rel="nofollow"` attribute to item links.
+* [FIX] Removed items from search results in the wp-admin Insert/Edit Link dialog box.
+* [FIX] Set resources to use HTTPS to avoid mixed-content warnings.
+
+todo must upgrade to use v2 of rest api before releasing this
+todo set release date
 
 = v0.6 (2014-11-10) =
 * [NEW] Switch back to Masonry layout, with several improvements (props [ryelle](https://profiles.wordpress.org/ryelle), [melchoyce](https://profiles.wordpress.org/melchoyce)).

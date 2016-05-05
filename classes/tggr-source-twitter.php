@@ -28,7 +28,7 @@ if ( ! class_exists( 'TGGRSourceTwitter' ) ) {
 		 */
 		protected function __construct() {
 			$this->view_folder   = dirname( __DIR__ ) . '/views/'. str_replace( '.php', '', basename( __FILE__ ) );
-			$this->setting_names = array( 'Consumer Key', 'Consumer Secret', 'Highlighted Accounts', '_bearer_token', '_newest_tweet_id' );
+			$this->setting_names = array( 'Consumer Key', 'Consumer Secret', 'Highlighted Accounts', 'Banned Accounts', '_bearer_token', '_newest_tweet_id' );
 
 			foreach ( $this->setting_names as $key ) {
 				$this->default_settings[ strtolower( str_replace( ' ', '_', $key ) ) ] = '';
@@ -61,12 +61,19 @@ if ( ! class_exists( 'TGGRSourceTwitter' ) ) {
 		public function register_hook_callbacks() {
 			add_action( 'init',                                       array( $this, 'init' ) );
 			add_action( 'admin_init',                                 array( $this, 'register_settings' ) );
-
 			add_filter( Tagregator::PREFIX . 'default_settings',      __CLASS__ . '::register_default_settings' );
 			add_filter( 'update_option_'. TGGRSettings::SETTING_SLUG, __CLASS__ . '::obtain_bearer_token', 10, 2 );
 			add_filter( 'the_content',                                __CLASS__ . '::convert_urls_to_links', 9 );    // before wp_texturize() to avoid malformed links. see https://core.trac.wordpress.org/ticket/17097#comment:1
 			add_filter( 'the_content',                                __CLASS__ . '::link_hashtags_and_usernames' );
 			add_filter( 'excerpt_length',                             __CLASS__ . '::get_excerpt_length' );
+			add_filter( 'json_pre_dispatch',                          __CLASS__ . '::remove_excerpt_more_link', 10, 2 );
+			add_filter( 'json_prepare_post',                          array( $this, 'get_extra_item_data' ), 10, 3 );
+
+			// Post screen columns
+			add_filter( 'manage_edit-' . self::POST_TYPE_SLUG . '_columns',             __CLASS__ . '::add_columns' );
+			add_filter( 'manage_edit-' . self::POST_TYPE_SLUG . '_sortable_columns',    __CLASS__ . '::add_columns' );
+			add_action( 'manage_' .      self::POST_TYPE_SLUG . '_posts_custom_column', __CLASS__ . '::display_columns', 10, 2 );
+			add_filter( 'request',                                                      __CLASS__ . '::sort_by_author' );
 		}
 
 		/**
@@ -205,6 +212,7 @@ if ( ! class_exists( 'TGGRSourceTwitter' ) ) {
 				$hashtag,
 				TGGRSettings::get_instance()->settings[ __CLASS__ ]['_newest_tweet_id']
 			);
+			$tweets = $this->remove_banned_items( $tweets, 'user', 'screen_name' );
 
 			$this->import_new_posts( $this->convert_items_to_posts( $tweets, $hashtag ) );
 			self::update_newest_tweet_id( $hashtag );
@@ -333,7 +341,7 @@ if ( ! class_exists( 'TGGRSourceTwitter' ) ) {
 			$post = get_post();
 
 			if ( isset( $post->post_type ) && self::POST_TYPE_SLUG == $post->post_type ) {
-				$content = preg_replace( "/@(\w+)/", "<a href=\"https://twitter.com/\\1\" class=\"". self::POST_TYPE_SLUG ."-username\">@\\1</a>", $content );
+				$content = preg_replace( "/@(\w+)/", "<a href=\"https://twitter.com/\\1\" rel=\"nofollow\" class=\"". self::POST_TYPE_SLUG ."-username\">@\\1</a>", $content );
 				$content = preg_replace( "/(?<!&)#(\w+)/", "<a href=\"https://twitter.com/search?q=\\1\" class=\"". self::POST_TYPE_SLUG ."-tag\">#\\1</a>", $content );
 			}
 			
@@ -362,27 +370,38 @@ if ( ! class_exists( 'TGGRSourceTwitter' ) ) {
 
 		/**
 		 * Gathers the data that the media-item view will need
+		 *
 		 * @mvc Model
 		 *
-		 * @param WP_Post $post
-		 * 
+		 * @param array  $prepared_post
+		 * @param array  $unprepared_post
+		 * @param string $context
+		 *
 		 * @return array
 		 */
-		public function get_item_view_data( $post ) {
-			$postmeta = get_post_custom( $post->ID );
-			$necessary_data = array(
-				'tweet_id'         => $postmeta['source_id'][0],
-				'post_permalink'   => sprintf( 'https://twitter.com/%s/status/%s', $postmeta['author_username'][0], $postmeta['source_id'][0] ),
-				'author_name'      => $postmeta['author_name'][0],
-				'author_username'  => $postmeta['author_username'][0],
-				'author_image_url' => $postmeta['author_image_url'][0],
-				'media'            => isset( $postmeta['media'][0] ) ? maybe_unserialize( $postmeta['media'][0] ) : array(),
-				'logo_url'         => plugins_url( 'images/source-logos/twitter.png', __DIR__ ),
-				'css_classes'      => self::get_css_classes( $post->ID, $postmeta['author_username'][0] ),
-				'show_excerpt'     => self::show_excerpt( $post ),
+		public function get_extra_item_data( $prepared_post, $unprepared_post, $context ) {
+			if ( self::POST_TYPE_SLUG !== $unprepared_post['post_type'] ) {
+				return $prepared_post;
+			}
+
+			$postmeta = get_post_custom( $unprepared_post['ID'] );
+
+			$author = array(
+				'name'     => $postmeta['author_name'][0],
+				'username' => $postmeta['author_username'][0],
+				'image'    => $postmeta['author_image_url'][0],
 			);
 
-			return $necessary_data;
+			$prepared_post['itemMeta'] = array(
+				'tweetId'         => $postmeta['source_id'][0],
+				'mediaPermalink'  => sprintf( 'https://twitter.com/%s/status/%s', $postmeta['author_username'][0], $postmeta['source_id'][0] ),
+				'author'           => $author,
+				'media'            => isset( $postmeta['media'][0] ) ? maybe_unserialize( $postmeta['media'][0] ) : array(),
+				'cssClasses'       => self::get_css_classes( $unprepared_post['ID'], $postmeta['author_username'][0] ),
+				'showExcerpt'      => self::show_excerpt( $unprepared_post ),
+			);
+
+			return $prepared_post;
 		}
 	} // end TGGRSourceTwitter
 }

@@ -149,8 +149,8 @@ if ( ! class_exists( 'Tagregator' ) ) {
 			wp_register_script(
 				self::PREFIX . 'front-end',
 				plugins_url( 'javascript/front-end.js', dirname( __FILE__ ) ),
-				array( 'jquery', 'masonry' ),
-				self::VERSION,
+				array( 'jquery' ),
+				1,
 				true
 			);
 
@@ -166,7 +166,7 @@ if ( ! class_exists( 'Tagregator' ) ) {
 				self::PREFIX . 'front-end',
 				plugins_url( 'css/front-end.css', dirname( __FILE__ ) ),
 				array( 'font-awesome' ),
-				self::VERSION,
+				1,
 				'all'
 			);
 

@@ -1,14 +1,17 @@
 == High Priority ==
+* integrate `nsp check` from https://nodesecurity.io/ into build process
+* Boxes don't stack cleanly now that not using masonary
+	* Maybe fix with different Flexbox layout, or CSS3 Columns. If not just re-enable masonry.
+* Scrolling to the top should trigger immediate refresh, like before switch to React
+* Make components/*/index.jsx DRY
 * i18n
-* "TypeError: a is undefined" JS error on twentythirteen
-	* switch to unminified jquery to debug
-	* check 2014 too
-* Can tag v1.0 when these are done
 * subscribers/etc can see menu item, but when click on it get cap error
 * tweets w/ emoji breaking when inserted into db.
 	* maybe base64-encode them before saving them, but needs to be backcompat.
 	* do to all services in case they start supporting emoji in future. instagram supports it now.
-	* https://core.trac.wordpress.org/ticket/27961
+	* might be working now w/ react front-end and db support in WP
+* If JSON request fails for any reason, then no future requests are made
+* Can tag v1.0 when these are done
 
 	
 == Contributions / Feedback ==

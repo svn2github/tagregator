@@ -48,9 +48,8 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 		public function register_hook_callbacks() {
 			add_action( 'init',                                                              array( $this, 'init' ) );
 			add_action( 'save_post',                                                         array( $this, 'prefetch_media_items' ), 10, 2 );
-			add_action( 'wp_ajax_'.        Tagregator::PREFIX . 'render_latest_media_items', array( $this, 'render_latest_media_items' ) );
-			add_action( 'wp_ajax_nopriv_'. Tagregator::PREFIX . 'render_latest_media_items', array( $this, 'render_latest_media_items' ) );
 			add_filter( 'body_class',                                                        array( $this, 'add_body_classes' ) );
+			add_filter( 'json_query_var-hashtag',                                            array( $this, 'import_hashtagged_posts' ) );
 
 			add_shortcode( self::SHORTCODE_NAME,                                             array( $this, 'shortcode_tagregator' ) );
 		}
@@ -117,15 +116,22 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 				'hashtag' => '',
 				'layout'  => 'three-column',
 			), $attributes );
-			$items = array();
-
-			if ( $attributes['hashtag'] ) {
-				$items = self::get_media_items( $attributes['hashtag'] );
-			}
 
 			if ( ! in_array( $attributes['layout'], array( 'one-column', 'two-column', 'three-column' ) ) ) {
 				$attributes['layout'] = 'three-column';
 			}
+
+			$media_sources = array();
+			foreach ( Tagregator::get_instance()->media_sources as $source ) {
+				$media_sources[] = $source::POST_TYPE_SLUG;
+			};
+			
+			$logos = array(
+				'twitter'   => plugins_url( 'images/source-logos/twitter.png',     dirname( __DIR__ ) ),
+				'instagram' => plugins_url( 'images/source-logos/instagram.png',   dirname( __DIR__ ) ),
+				'flickr'    => plugins_url( 'images/source-logos/flickr.png',      dirname( __DIR__ ) ),
+				'google'    => plugins_url( 'images/source-logos/google-plus.png', dirname( __DIR__ ) ),
+			);
 
 			ob_start();
 			require_once( $this->view_folder . '/shortcode-tagregator.php' );
@@ -133,71 +139,16 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 		}
 
 		/**
-		 * Gets all of the items from all of the media sources that are assigned to the given hashtags
-		 * @mvc Model
+		 * When a hashtag request is sent, trigger a new import of data.
 		 *
-		 * @param string $hashtags Comma-separated list of hashtags
-		 * @return array
-		 */
-		protected function get_media_items( $hashtags ) {
-			$items = $post_types = $terms = array();
-			$hashtags = explode( ',', $hashtags );
-
-			foreach ( Tagregator::get_instance()->media_sources as $source ) {
-				$post_types[] = $source::POST_TYPE_SLUG;
-			}
-
-			foreach ( $hashtags as $hashtag ) {
-				$term = get_term_by( 'name', trim( $hashtag ), TGGRMediaSource::TAXONOMY_HASHTAG_SLUG );
-
-				if ( $term ) {
-					$terms[] = $term;
-				}
-			}
-
-			if ( $terms ) {
-				$params = array(
-					'posts_per_page' => apply_filters( Tagregator::PREFIX . 'media_items_per_page', 30 ),   // @deprecated, use `tggr-get_media_items_params` instead
-					'post_type'      => $post_types,
-					'tax_query'      => array(
-						'relation'   => 'OR',
-					),
-				);
-
-				foreach ( $terms as $term ) {
-					$params['tax_query'][] = array(
-						'taxonomy' => TGGRMediaSource::TAXONOMY_HASHTAG_SLUG,
-						'field'    => 'slug',
-						'terms'    => $term->slug,
-					);
-				}
-
-				$items = get_posts( apply_filters( Tagregator::PREFIX . 'get_media_items_params', $params ) );
-			}
-
-			return $items;
-		}
-
-		/**
-		 * Returns HTML markup for the latest media items
-		 * This is an AJAX handler
 		 * @mvc Controller
+		 *
+		 * @return string
 		 */
-		public function render_latest_media_items() {
-			$hashtag = sanitize_text_field( $_REQUEST['hashtag'] );
-			$existing_item_ids = isset( $_REQUEST['existingItemIDs'] ) ? (array) $_REQUEST['existingItemIDs'] : array();
-			array_walk( $existing_item_ids, 'absint' );
-
-			if ( empty( $hashtag ) ) {
-				wp_send_json_error( array( 'error' => 'Invalid hashtag') );
-			}
-
+		public function import_hashtagged_posts( $hashtag ) {
 			$this->import_new_items( $hashtag );
-			$items = $this->get_media_items( $hashtag );
-			$new_items_markup = $this->get_new_items_markup( $items, $existing_item_ids );
-			$new_items_markup = str_replace( array( "\n", "\t" ), '', $new_items_markup );  // jQuery.prependTo() complains if a string of HTML doesn't start with a `<`
 
-			wp_send_json_success( $new_items_markup ? $new_items_markup : 0 );
+			return $hashtag;
 		}
 
 		/**
@@ -253,45 +204,6 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 			$elapsed_time = $current_time - $last_fetch;
 
 			return $elapsed_time > $refresh_interval;
-		}
-
-		/**
-		 * Builds the markup for an array of items if they don't already exist in the given array
-		 *
-		 * @param array $items
-		 * @param array $existing_item_ids
-		 * @return string
-		 */
-		protected function get_new_items_markup( $items, $existing_item_ids ) {
-			ob_start();
-			$this->render_media_items( $items, $existing_item_ids );
-			$items_markup = ob_get_clean();
-
-			return $items_markup ? $items_markup : '';
-		}
-
-		/**
-		 * Builds the markup for media items, optionally skipping some items
-		 *
-		 * @param array $items
-		 * @param array $excluded_item_ids
-		 */
-		protected function render_media_items( $items, $excluded_item_ids = array() ) {
-			foreach ( $items as $item ) {
-				if ( ! in_array( $item->ID, $excluded_item_ids ) ) {
-					$GLOBALS['post'] = $item;
-					setup_postdata( $GLOBALS['post'] );
-
-					// Populate variables specific to this media type.
-					$post_type = get_post_type();
-					$class_name = $this->post_types_to_class_names[ $post_type ];
-					extract( $class_name::get_instance()->get_item_view_data( $item ) );
-
-					require( self::get_view_folder_from_post_type( $post_type ) . '/shortcode-tagregator-media-item.php' );
-				}
-			}
-
-			wp_reset_postdata();
 		}
 
 		/**

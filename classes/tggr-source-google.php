@@ -26,7 +26,7 @@ if ( ! class_exists( 'TGGRSourceGoogle' ) ) {
 		 */
 		protected function __construct() {
 			$this->view_folder   = dirname( __DIR__ ) . '/views/'. str_replace( '.php', '', basename( __FILE__ ) );
-			$this->setting_names = array( 'API Key', 'Highlighted Accounts' );
+			$this->setting_names = array( 'API Key', 'Highlighted Accounts', 'Banned Accounts' );
 
 			foreach ( $this->setting_names as $key ) {
 				$this->default_settings[ strtolower( str_replace( ' ', '_', $key ) ) ] = '';
@@ -59,9 +59,17 @@ if ( ! class_exists( 'TGGRSourceGoogle' ) ) {
 		public function register_hook_callbacks() {
 			add_action( 'init',                                       array( $this, 'init' ) );
 			add_action( 'admin_init',                                 array( $this, 'register_settings' ) );
-			add_filter( 'excerpt_length',                             __CLASS__ . '::get_excerpt_length' );
-
 			add_filter( Tagregator::PREFIX . 'default_settings',      __CLASS__ . '::register_default_settings' );
+			add_filter( 'the_content',                                __CLASS__ . '::convert_urls_to_links', 9 );    // before wp_texturize() to avoid malformed links. see https://core.trac.wordpress.org/ticket/17097#comment:1
+			add_filter( 'excerpt_length',                             __CLASS__ . '::get_excerpt_length' );
+			add_filter( 'json_pre_dispatch',                          __CLASS__ . '::remove_excerpt_more_link', 10, 2 );
+			add_filter( 'json_prepare_post',                          array( $this, 'get_extra_item_data' ), 10, 3 );
+
+			// Post screen columns
+			add_filter( 'manage_edit-' . self::POST_TYPE_SLUG . '_columns',             __CLASS__ . '::add_columns' );
+			add_filter( 'manage_edit-' . self::POST_TYPE_SLUG . '_sortable_columns',    __CLASS__ . '::add_columns' );
+			add_action( 'manage_' .      self::POST_TYPE_SLUG . '_posts_custom_column', __CLASS__ . '::display_columns', 10, 2 );
+			add_filter( 'request',                                                      __CLASS__ . '::sort_by_author' );
 		}
 
 		/**
@@ -126,9 +134,9 @@ if ( ! class_exists( 'TGGRSourceGoogle' ) ) {
 		public function import_new_items( $hashtag ) {
 			$activities = self::get_new_activities(
 				TGGRSettings::get_instance()->settings[ __CLASS__ ]['api_key'],
-				$hashtag,
-				TGGRSettings::get_instance()->settings[ __CLASS__ ]['_newest_activity_date']
+				$hashtag
 			);
+			$activities = $this->remove_banned_items( $activities, 'actor', 'id' );
 
 			$this->import_new_posts( $this->convert_items_to_posts( $activities, $hashtag ) );
 			self::update_newest_activity_date( $hashtag );
@@ -136,14 +144,15 @@ if ( ! class_exists( 'TGGRSourceGoogle' ) ) {
 
 		/**
 		 * Retrieves activities containing the given hashtag that were posted since the last import
+		 *
 		 * @mvc Model
 		 *
 		 * @param string $api_key
 		 * @param string $hashtag
-		 * @param string $last_updated_activities The timestamp of the most recent item that is already saved in the database
+		 *
 		 * @return mixed string|false
 		 */
-		protected static function get_new_activities( $api_key, $hashtag, $last_updated_activities ) {
+		protected static function get_new_activities( $api_key, $hashtag ) {
 			$response = $activities = false;
 
 			if ( $api_key && $hashtag ) {
@@ -157,12 +166,12 @@ if ( ! class_exists( 'TGGRSourceGoogle' ) ) {
 				$response = wp_remote_get( $url );
 				$body     = json_decode( wp_remote_retrieve_body( $response ) );
 
-				if ( isset( $body->updated ) && strtotime( $body->updated ) > $last_updated_activities && ! empty( $body->items ) ) {
+				if ( ! empty( $body->items ) ) {
 					$activities = $body->items;
 				}
 			}
 
-			self::log( __METHOD__, 'Results', compact( 'api_key', 'hashtag', 'last_updated_activities', 'response' ) );
+			self::log( __METHOD__, 'Results', compact( 'api_key', 'hashtag', 'response' ) );
 
 			return $activities;
 		}
@@ -238,27 +247,38 @@ if ( ! class_exists( 'TGGRSourceGoogle' ) ) {
 
 		/**
 		 * Gathers the data that the media-item view will need
+		 *
 		 * @mvc Model
 		 *
-		 * @param WP_Post $post
+		 * @param array  $prepared_post
+		 * @param array  $unprepared_post
+		 * @param string $context
 		 *
 		 * @return array
 		 */
-		public function get_item_view_data( $post ) {
-			$postmeta = get_post_custom( $post->ID );
-			$necessary_data = array(
-				'source_id'        => $postmeta['source_id'][0],
-				'post_permalink'   => $postmeta['post_permalink'][0],
-				'author_name'      => $postmeta['author_name'][0],
-				'author_url'       => $postmeta['author_url'][0],
-				'author_image_url' => $postmeta['author_image_url'][0],
-				'media'            => isset( $postmeta['media'][0] ) ? maybe_unserialize( $postmeta['media'][0] ) : array(),
-				'logo_url'         => plugins_url( 'images/source-logos/google-plus.png', __DIR__ ),
-				'css_classes'      => self::get_css_classes( $post->ID, $postmeta['author_name'][0] ),
-				'show_excerpt'     => self::show_excerpt( $post ),
+		public function get_extra_item_data( $prepared_post, $unprepared_post, $context ) {
+			if ( self::POST_TYPE_SLUG !== $unprepared_post['post_type'] ) {
+				return $prepared_post;
+			}
+
+			$postmeta = get_post_custom( $unprepared_post['ID'] );
+
+			$author = array(
+				'name'     => $postmeta['author_name'][0],
+				'username' => $postmeta['author_name'][0],
+				'image'    => $postmeta['author_image_url'][0],
 			);
 
-			return $necessary_data;
+			$prepared_post['itemMeta'] = array(
+				'sourceId'         => $postmeta['source_id'][0],
+				'mediaPermalink'   => $postmeta['post_permalink'][0],
+				'author'           => $author,
+				'media'            => isset( $postmeta['media'][0] ) ? maybe_unserialize( $postmeta['media'][0] ) : array(),
+				'cssClasses'       => self::get_css_classes( $unprepared_post['ID'], $postmeta['author_name'][0] ),
+				'showExcerpt'      => self::show_excerpt( $unprepared_post ),
+			);
+
+			return $prepared_post;
 		}
 	} // end TGGRSourceGoogle
 }

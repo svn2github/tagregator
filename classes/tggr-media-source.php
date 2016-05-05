@@ -137,6 +137,69 @@ if ( ! class_exists( 'TGGRMediaSource' ) ) {
 		}
 
 		/**
+		 * Add extra columns to the list table on each All Posts screen
+		 *
+		 * @param array
+		 *
+		 * @return array
+		 */
+		public static function add_columns( $columns ) {
+			$columns['media-author'] = 'Author';
+
+			return $columns;
+		}
+
+		/**
+		 * Sort the Author column on each All Posts screen
+		 *
+		 * @param $query_vars
+		 *
+		 * @return mixed
+		 */
+		public static function sort_by_author( $query_vars ) {
+			$class = get_called_class();
+
+			if ( array_key_exists( 'orderby', $query_vars ) && $class::POST_TYPE_SLUG == $query_vars['post_type'] ) {
+				if ( 'Author' == $query_vars['orderby'] ) {
+					$query_vars['orderby']  = 'meta_value';
+					$query_vars['meta_key'] = self::get_author_username_key( $class );
+				}
+			}
+
+			return $query_vars;
+		}
+
+		/**
+		 * Output the value for extra columns on each All Posts screen
+		 *
+		 * @param string $column
+		 * @param int    $post_id
+		 */
+		public static function display_columns( $column, $post_id ) {
+			if ( 'media-author' != $column ) {
+				return;
+			}
+
+			echo esc_html(
+				get_post_meta( $post_id, self::get_author_username_key( get_called_class() ), true )
+			);
+		}
+
+		/**
+		 * Get the key for where the field where the author's username is stored.
+		 *
+		 * This is always `author_username`, except for with Google+, because they just don't have separate fields
+		 * for the name and username, so that class doesn't store a `author_username` field.
+		 *
+		 * @param string $class
+		 *
+		 * @return string
+		 */
+		protected static function get_author_username_key( $class ) {
+			return 'TGGRSourceGoogle' == $class ? 'author_name' : 'author_username';
+		}
+
+		/**
 		 * Registers default settings with TGGRSettings
 		 * @mvc Model
 		 *
@@ -202,8 +265,9 @@ if ( ! class_exists( 'TGGRMediaSource' ) ) {
 		public function markup_settings_fields( $field ) {
 			$class = get_called_class();
 			$setting = str_replace( $class::SETTINGS_PREFIX, '', $field['label_for'] );
+			$textarea_settings = array( 'highlighted_accounts', 'banned_accounts' );
 
-			require( $class::get_instance()->view_folder .'/page-settings-fields.php' );
+			require( dirname( __DIR__ ) . '/views/media-sources-common/page-settings-fields.php' );
 		}
 
 		/**
@@ -291,13 +355,77 @@ if ( ! class_exists( 'TGGRMediaSource' ) ) {
 		}
 
 		/**
+		 * Remove items from banned users before they're imported.
+		 *
+		 * @param array  $items
+		 * @param string $username_property_1 The name of the first-level property;            e.g., 'foo' to reference $item->foo
+		 * @param string $username_property_2 Optional. The name of the second-level property; e.g., 'bar' to reference $item->foo->bar
+		 *
+		 * @return array
+		 */
+		public function remove_banned_items( $items, $username_property_1, $username_property_2 = false ) {
+			if ( ! $items ) {
+				return $items;
+			}
+
+			$banned_accounts = self::get_banned_users();
+
+			foreach ( $items as $key => $item ) {
+				// The username is stored in a different property by each source API, so it must be fetched dynamically
+				$username = strtolower(
+					$username_property_2 ? $item->{$username_property_1}->{$username_property_2} : $item->{$username_property_1}
+				);
+
+				if ( in_array( $username, $banned_accounts, true ) ) {
+					self::log( __METHOD__, 'Ignored item from banned account', $item );
+					unset( $items[ $key ] );
+				}
+			}
+
+			return $items;
+		}
+
+		/**
+		 * Pull the banned accounts from the settings
+		 *
+		 * @return array
+		 */
+		public static function get_banned_users() {
+			return self::clean_usernames(
+				TGGRSettings::get_instance()->settings[ get_called_class() ]['banned_accounts']
+			);
+		}
+
+		/*
+		 * Cleans a comma-separated list of usernames
+		 *
+		 * @param string $csv_usernames
+		 * @param string $case          'lower' to make returned usernames all lowercase
+		 *
+		 * @return array
+		 */
+		protected static function clean_usernames( $csv_usernames, $case = 'lower' ) {
+			if ( 'lower' === $case ) {
+				$csv_usernames = strtolower( $csv_usernames );
+			}
+
+			$clean_usernames = explode( ',', $csv_usernames );
+			$clean_usernames = array_map( 'trim', $clean_usernames );
+			$clean_usernames = array_map( 'ltrim', $clean_usernames, array_fill( 0, count( $clean_usernames ), '@' ) ); // remove any appended @ characters
+
+			return $clean_usernames;
+		}
+
+		/**
 		 * Gets all of the unique IDs for existing posts from a given source
+		 *
 		 * This is used to prevent inserting duplicate items into the database. It's expensive, but necessary because of race conditions.
-		 * It only happens during the AJAX calls to get new content, so the user won't notice anyway.
+		 * It only happens during the REST API calls to get new content, so the user won't notice much anyway.
 		 *
 		 * @mvc Model
 		 *
 		 * @param string $post_type
+		 *
 		 * @return array
 		 */
 		public static function get_existing_unique_ids( $post_type ) {
@@ -313,6 +441,8 @@ if ( ! class_exists( 'TGGRMediaSource' ) ) {
 				",
 				$post_type
 			) );
+
+			// todo This needs a sanity limit for performance. Only really need to check against most recent ~400, but need to order by latest.
 
 			return is_array( $existing_posts_unique_ids ) ? $existing_posts_unique_ids : array();
 		}
@@ -334,6 +464,19 @@ if ( ! class_exists( 'TGGRMediaSource' ) ) {
 		 * @return array
 		 */
 		abstract public function convert_items_to_posts( $items, $term );
+
+		/**
+		 * Gathers the data that the media-item view will need
+		 *
+		 * @mvc Model
+		 *
+		 * @param array  $prepared_post
+		 * @param array  $unprepared_post
+		 * @param string $context
+		 *
+		 * @return array
+		 */
+		abstract public function get_extra_item_data( $prepared_post, $unprepared_post, $context );
 
 		/**
 		 * Creates a title for a post based on the content
@@ -393,15 +536,6 @@ if ( ! class_exists( 'TGGRMediaSource' ) ) {
 		}
 
 		/**
-		 * Gathers the data that the media-item view will need
-		 * @mvc Model
-		 *
-		 * @param WP_Post $post
-		 * @return array
-		 */
-		abstract public function get_item_view_data( $post );
-
-		/**
 		 * Determine the relevant CSS classes for a media item container
 		 * @mvc Model
 		 *
@@ -411,12 +545,11 @@ if ( ! class_exists( 'TGGRMediaSource' ) ) {
 		 * @return array
 		 */
 		public static function get_css_classes( $item_id, $author_username, $classes = array() ) {
-			array_unshift( $classes, get_post_type() );
+			array_unshift( $classes, get_post_type( $item_id ) );
 			array_unshift( $classes, Tagregator::CSS_PREFIX . 'media-item' );
 
-			$highlighted_accounts = explode(
-				',',
-				strtolower( trim( TGGRSettings::get_instance()->settings[ get_called_class() ]['highlighted_accounts'] ) )
+			$highlighted_accounts = self::clean_usernames(
+				TGGRSettings::get_instance()->settings[ get_called_class() ]['highlighted_accounts']
 			);
 
 			if ( in_array( strtolower( $author_username ), $highlighted_accounts ) ) {
@@ -439,6 +572,8 @@ if ( ! class_exists( 'TGGRMediaSource' ) ) {
 
 			if ( isset( $post->post_type ) && $class::POST_TYPE_SLUG == $post->post_type ) {
 				$content = make_clickable( $content );
+				$content = wp_rel_nofollow( $content );
+				$content = wp_unslash(      $content );
 			}
 
 			return $content;
@@ -447,10 +582,6 @@ if ( ! class_exists( 'TGGRMediaSource' ) ) {
 		/**
 		 * Return the length of excerpts in words
 		 *
-		 * 40 was chosen because we want to get about 200 characters, so that no posts are significantly
-		 * longer than those from Twitter. The average length of a word in the most common western
-		 * languages is roughly 5 characters, so 200 / 5 = 40.
-		 *
 		 * @param $number_words
 		 *
 		 * @return int
@@ -458,9 +589,10 @@ if ( ! class_exists( 'TGGRMediaSource' ) ) {
 		public static function get_excerpt_length( $number_words ) {
 			global $post;
 			$class = get_called_class();
+			$average_word_length = 5; // in the most common western languages
 
 			if ( ! empty( $post->post_type ) && $class::POST_TYPE_SLUG == $post->post_type ) {
-				$number_words = 40;
+				$number_words = self::POST_CONTENT_LENGTH_DISPLAY_LIMIT / $average_word_length;
 			}
 
 			return $number_words;
@@ -472,15 +604,36 @@ if ( ! class_exists( 'TGGRMediaSource' ) ) {
 		 * mb_strlen() is used when available because strlen() is not multibyte-aware. Passing in a 140-character
 		 * message in Cyrillic, for example, will return 280.
 		 *
-		 * @param WP_Post $post
+		 * @param array $post
 		 *
 		 * @return bool
 		 */
 		public static function show_excerpt( $post ) {
-			$content = strip_tags( $post->post_content );
+			$content = strip_tags( $post['post_content'] );
 			$length  = function_exists( 'mb_strlen' ) ? mb_strlen( $content ) : strlen( $content );
 
 			return $length > self::POST_CONTENT_LENGTH_DISPLAY_LIMIT;
+		}
+
+		/**
+		 * Remove the 'Continue reading...' links on excerpts
+		 *
+		 * They're not appropriate in this context because they link to the current site instead of the external
+		 * source.
+		 *
+		 * @param mixed                   $result
+		 * @param WP_JSON_ResponseHandler $response_handler
+		 *
+		 * @return mixed
+		 */
+		public static function remove_excerpt_more_link( $result, $response_handler ) {
+			$class = get_called_class();
+
+			if ( '/posts' === $response_handler->path && in_array( $class::POST_TYPE_SLUG, $response_handler->params['GET']['type'] ) ) {
+				remove_all_filters( 'excerpt_more' );
+			}
+
+			return $result;
 		}
 	} // end TGGRModule
 }
