@@ -629,8 +629,10 @@ if ( ! class_exists( 'TGGRMediaSource' ) ) {
 		public static function remove_excerpt_more_link( $result, $response_handler ) {
 			$class = get_called_class();
 
-			if ( '/posts' === $response_handler->path && in_array( $class::POST_TYPE_SLUG, $response_handler->params['GET']['type'] ) ) {
-				remove_all_filters( 'excerpt_more' );
+			if ( '/posts' === $response_handler->path && ! empty( $response_handler->params['GET']['type'] ) ) {
+				if ( in_array( $class::POST_TYPE_SLUG, $response_handler->params['GET']['type'], true ) ) {
+					remove_all_filters( 'excerpt_more' );
+				}
 			}
 
 			return $result;
