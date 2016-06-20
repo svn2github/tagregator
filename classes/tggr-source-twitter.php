@@ -341,7 +341,7 @@ if ( ! class_exists( 'TGGRSourceTwitter' ) ) {
 			$post = get_post();
 
 			if ( isset( $post->post_type ) && self::POST_TYPE_SLUG == $post->post_type ) {
-				$content = preg_replace( "/@(\w+)/", "<a href=\"https://twitter.com/\\1\" rel=\"nofollow\" class=\"". self::POST_TYPE_SLUG ."-username\">@\\1</a>", $content );
+				$content = preg_replace( "/@(\w+)/",     "<a href=\"https://twitter.com/\\1\" rel=\"nofollow\" class=\"". self::POST_TYPE_SLUG ."-username\">@\\1</a>", $content );
 				$content = preg_replace( "/(?<!&)#(\w+)/", "<a href=\"https://twitter.com/search?q=\\1\" class=\"". self::POST_TYPE_SLUG ."-tag\">#\\1</a>", $content );
 			}
 			
