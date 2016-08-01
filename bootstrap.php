@@ -14,7 +14,7 @@ if ( $_SERVER['SCRIPT_FILENAME'] == __FILE__ )
 
 define( 'TGGR_NAME',                 'Tagregator' );
 define( 'TGGR_REQUIRED_PHP_VERSION', '5.3' ); // because of get_called_class()
-define( 'TGGR_REQUIRED_WP_VERSION',  '4.1' ); // because of wp_json_encode()
+define( 'TGGR_REQUIRED_WP_VERSION',  '4.4' ); // because of register_rest_routes()
 
 /**
  * Checks if the system requirements are met

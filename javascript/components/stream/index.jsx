@@ -76,7 +76,7 @@ export default React.createClass({
 		let items = this.state.data.map( function( item, i ) {
 			let rendered;
 
-			switch ( item.type ) {
+			switch ( item.post_type ) {
 				case 'tggr-tweets':
 					rendered = ( <Tweet key={ i } item={ item } layout={ layout } /> );
 					break;
@@ -90,7 +90,7 @@ export default React.createClass({
 					rendered = ( <Google key={ i } item={ item } layout={ layout } /> );
 					break;
 				default:
-					rendered = ( <div key={ i }>No handler for this media type: { item.type }</div> );
+					rendered = ( <div key={ i }>No handler for this media type: { item.post_type }</div> );
 					break;
 			}
 
@@ -98,7 +98,7 @@ export default React.createClass({
 		} );
 
 		if ( items.length < 1 && ! this.state.fetching ) {
-			items = ( <div><p>No results found for {tggrData.hashtag} (yet).</p></div> );
+			items = ( <div><p>No results found for {tggrData.hashtags} (yet).</p></div> );
 		}
 
 		return (

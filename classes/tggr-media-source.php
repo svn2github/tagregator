@@ -470,13 +470,11 @@ if ( ! class_exists( 'TGGRMediaSource' ) ) {
 		 *
 		 * @mvc Model
 		 *
-		 * @param array  $prepared_post
-		 * @param array  $unprepared_post
-		 * @param string $context
+		 * @param array $item
 		 *
 		 * @return array
 		 */
-		abstract public function get_extra_item_data( $prepared_post, $unprepared_post, $context );
+		abstract public function add_item_meta_data( $item );
 
 		/**
 		 * Creates a title for a post based on the content
@@ -567,14 +565,9 @@ if ( ! class_exists( 'TGGRMediaSource' ) ) {
 		 * @return string
 		 */
 		public static function convert_urls_to_links( $content ) {
-			$post = get_post();
-			$class = get_called_class();
-
-			if ( isset( $post->post_type ) && $class::POST_TYPE_SLUG == $post->post_type ) {
-				$content = make_clickable( $content );
-				$content = wp_rel_nofollow( $content );
-				$content = wp_unslash(      $content );
-			}
+			$content = make_clickable(  $content );
+			$content = wp_rel_nofollow( $content );
+			$content = wp_unslash(      $content );
 
 			return $content;
 		}
@@ -604,12 +597,12 @@ if ( ! class_exists( 'TGGRMediaSource' ) ) {
 		 * mb_strlen() is used when available because strlen() is not multibyte-aware. Passing in a 140-character
 		 * message in Cyrillic, for example, will return 280.
 		 *
-		 * @param array $post
+		 * @param string $content
 		 *
 		 * @return bool
 		 */
-		public static function show_excerpt( $post ) {
-			$content = strip_tags( $post['post_content'] );
+		public static function show_excerpt( $content ) {
+			$content = strip_tags( $content );
 			$length  = function_exists( 'mb_strlen' ) ? mb_strlen( $content ) : strlen( $content );
 
 			return $length > self::POST_CONTENT_LENGTH_DISPLAY_LIMIT;

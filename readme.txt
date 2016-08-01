@@ -109,7 +109,6 @@ Once you're done, please consider sharing it with others by [submitting it to th
 * [FIX] Removed items from search results in the wp-admin Insert/Edit Link dialog box.
 * [FIX] Set resources to use HTTPS to avoid mixed-content warnings.
 
-todo must upgrade to use v2 of rest api before releasing this
 todo set release date
 
 = v0.6 (2014-11-10) =

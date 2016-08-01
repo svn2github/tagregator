@@ -47,11 +47,13 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 		 */
 		public function register_hook_callbacks() {
 			add_action( 'init',                                                              array( $this, 'init' ) );
+			add_action( 'rest_api_init',                                                     array( $this, 'register_rest_routes' ) );
 			add_action( 'save_post',                                                         array( $this, 'prefetch_media_items' ), 10, 2 );
 			add_filter( 'body_class',                                                        array( $this, 'add_body_classes' ) );
-			add_filter( 'json_query_var-hashtag',                                            array( $this, 'import_hashtagged_posts' ) );
 
 			add_shortcode( self::SHORTCODE_NAME,                                             array( $this, 'shortcode_tagregator' ) );
+
+			// todo realign
 		}
 
 		/**
@@ -73,6 +75,16 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 		 * @param string $db_version
 		 */
 		public function upgrade( $db_version = 0 ) {}
+
+		/**
+		 * Register routes for the REST API
+		 */
+		public function register_rest_routes() {
+			register_rest_route( 'tagregator/v1', '/items', array(
+				'methods'  => 'GET',
+				'callback' => array( $this, 'rest_get_items' ),
+			) );
+		}
 
 		/**
 		 * Add a class to body if this page has the tagregator shortcode.
@@ -112,9 +124,14 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 		 * @return string
 		 */
 		public function shortcode_tagregator( $attributes ) {
+			if ( empty( $attributes['hashtags'] ) && ! empty( $attributes['hashtag'] ) ) {
+				$attributes['hashtags'] = $attributes['hashtag'];   // for backwards compatibility
+			}
+
 			$attributes = shortcode_atts( array(
-				'hashtag' => '',
+				'hashtags' => '',
 				'layout'  => 'three-column',
+				// todo realign
 			), $attributes );
 
 			if ( ! in_array( $attributes['layout'], array( 'one-column', 'two-column', 'three-column' ) ) ) {
@@ -139,16 +156,93 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 		}
 
 		/**
-		 * When a hashtag request is sent, trigger a new import of data.
+		 * Get recent items from all media sources
 		 *
-		 * @mvc Controller
+		 * @mvc Model
+		 *
+		 * @param WP_REST_Request $request
+		 *
+		 * @return array
+		 */
+		public function rest_get_items( $request ) {
+			$source_post_types    = array();
+			$source_post_type_map = array();
+			$hashtags             = $request->get_param( 'hashtags' );
+			$valid_fields         = array( 'ID', 'post_content', 'post_excerpt', 'post_title', 'post_type', 'post_date_gmt' );
+
+			foreach ( Tagregator::get_instance()->media_sources as $source ) {
+				$source_post_types[] = $source::POST_TYPE_SLUG;
+				$source_post_type_map[ $source::POST_TYPE_SLUG ] = $source;
+			}
+
+			$hashtags = array_map( 'sanitize_text_field', $hashtags );
+			self::import_new_items( $hashtags );
+
+			// `tax_query` will return posts matching any term if some of the passed terms don't exist
+			foreach ( $hashtags as $index => $hashtag ) {
+				if ( ! term_exists( $hashtag, TGGRMediaSource::TAXONOMY_HASHTAG_SLUG ) ) {
+					unset( $hashtags[ $index ] );
+				}
+			}
+
+			if ( empty ( $hashtags ) ) {
+				return array();
+			}
+
+			$GLOBALS['wpdb']->queries = array();
+
+			$items = get_posts( array(
+				'post_type'        => $source_post_types,
+				'posts_per_page'   => $this->refresh_interval, // there's no point in giving them more they can read before the page refreshes
+				'suppress_filters' => false,
+
+				'tax_query' => array(
+					array(
+						'taxonomy' => TGGRMediaSource::TAXONOMY_HASHTAG_SLUG,
+						'field'    => 'slug',
+						'terms'    => $hashtags,
+					)
+				),
+			) );
+
+			// Prune unneeded fields to minimize the JSON response size, then add meta fields
+			foreach ( $items as $index => $item ) {
+				// Apply 'tagregator_content' before wp_texturize() to avoid malformed links. See https://core.trac.wordpress.org/ticket/17097#comment:1
+				$item->post_content = apply_filters( 'tagregator_content', $item->post_content );
+				$item->post_content = apply_filters( 'the_content',        $item->post_content );
+				$item->post_excerpt = self::get_the_excerpt( $item );
+
+				$item = array_intersect_key( (array) $item, array_flip( $valid_fields ) );
+				$item = $source_post_type_map[ $item['post_type'] ]->add_item_meta_data( $item );
+
+				$items[ $index ] = $item;
+			}
+
+			return $items;
+		}
+
+		/**
+		 * Temporary replacement for Core's get_the_excerpt()
+		 *
+		 * This is only necessary to work around the bug described in #36934-core and #37519-core. Once
+		 * #36934-core is fixed, this can be removed, and any code calling it can just call get_the_excerpt().
+		 * Maybe wait until that release has been widely adopted, though, or just bump TGGR_REQUIRED_WP_VERSION
+		 *
+		 * @param WP_Post $item
 		 *
 		 * @return string
 		 */
-		public function import_hashtagged_posts( $hashtag ) {
-			$this->import_new_items( $hashtag );
+		protected static function get_the_excerpt( $item ) {
+			$excerpt_length = apply_filters( 'excerpt_length', 55 );
 
-			return $hashtag;
+			$text = $item->post_content;
+			$text = strip_shortcodes( $text );
+			$text = apply_filters( 'tagregator_content', $text );
+			$text = apply_filters( 'he_content',         $text );
+			$text = str_replace( ']]>', ']]&gt;', $text );
+			$text = wp_trim_words( $text, $excerpt_length, '' );
+
+			return $text;
 		}
 
 		/**
@@ -163,11 +257,10 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 		 * where multiple hashtags are used in one or both requests, which would complicate things without adding
 		 * much benefit.
 		 *
-		 * @param string $hashtags Comma-separated list of hashtags
+		 * @param array  $hashtags
 		 * @param string $rate_limit 'respect' to enforce the rate limit, or 'ignore' to ignore it
 		 */
 		protected function import_new_items( $hashtags, $rate_limit = 'respect' ) {
-			$hashtags      = explode( ',', $hashtags );
 			$semaphore_key = (int) base_convert( substr( md5( __METHOD__ . site_url() ), 0, 8 ), 16, 10 );
 			$semaphore_id  = function_exists( 'sem_get' ) ? sem_get( $semaphore_key ) : false;
 
@@ -215,6 +308,8 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 		protected function get_view_folder_from_post_type( $post_type ) {
 			$class_name = $this->post_types_to_class_names[ $post_type ];
 			return $class_name::get_instance()->view_folder;
+
+			// todo is dead and can be removed
 		}
 
 		/**
@@ -247,9 +342,15 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 			foreach ( $shortcodes as $shortcode ) {
 				if ( self::SHORTCODE_NAME == $shortcode[2] ) {
 					$attributes = shortcode_parse_atts( $shortcode[3] );
-					
-					if ( isset( $attributes['hashtag'] ) ) {
-						$this->import_new_items( $attributes['hashtag'], 'ignore' );
+
+					// todo can replace all this with has_shortcode()
+
+					if ( empty( $attributes['hashtags'] ) && ! empty( $attributes['hashtag'] ) ) {
+						$attributes['hashtags'] = $attributes['hashtag'];   // for backwards compatibility
+					}
+
+					if ( isset( $attributes['hashtags'] ) ) {
+						self::import_new_items( explode( ',', $attributes['hashtags'] ), 'ignore' );
 					}
 				}
 			}

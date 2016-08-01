@@ -63,8 +63,8 @@ if ( ! class_exists( 'TGGRSourceTwitter' ) ) {
 			add_action( 'admin_init',                                 array( $this, 'register_settings' ) );
 			add_filter( Tagregator::PREFIX . 'default_settings',      __CLASS__ . '::register_default_settings' );
 			add_filter( 'update_option_'. TGGRSettings::SETTING_SLUG, __CLASS__ . '::obtain_bearer_token', 10, 2 );
-			add_filter( 'the_content',                                __CLASS__ . '::convert_urls_to_links', 9 );    // before wp_texturize() to avoid malformed links. see https://core.trac.wordpress.org/ticket/17097#comment:1
-			add_filter( 'the_content',                                __CLASS__ . '::link_hashtags_and_usernames' );
+			add_filter( 'tagregator_content',                         __CLASS__ . '::convert_urls_to_links' );
+			add_filter( 'tagregator_content',                         __CLASS__ . '::link_hashtags_and_usernames' );
 			add_filter( 'excerpt_length',                             __CLASS__ . '::get_excerpt_length' );
 			add_filter( 'json_pre_dispatch',                          __CLASS__ . '::remove_excerpt_more_link', 10, 2 );
 			add_filter( 'json_prepare_post',                          array( $this, 'get_extra_item_data' ), 10, 3 );
@@ -330,20 +330,19 @@ if ( ! class_exists( 'TGGRSourceTwitter' ) ) {
 
 		/**
 		 * Convert usernames and hashtags to links
+		 *
 		 * @mvc Model
 		 *
 		 * @link http://snipplr.com/view.php?codeview&id=28482 Based on
 		 * @link https://gist.github.com/georgestephanis/6567420 Based on
+		 *
 		 * @param string $text
 		 * @return string
 		 */
 		public static function link_hashtags_and_usernames( $content ) {
-			$post = get_post();
-
-			if ( isset( $post->post_type ) && self::POST_TYPE_SLUG == $post->post_type ) {
-				$content = preg_replace( "/\s@(\w+)/",     "<a href=\"https://twitter.com/\\1\" rel=\"nofollow\" class=\"". self::POST_TYPE_SLUG ."-username\">@\\1</a>", $content );
-				$content = preg_replace( "/(?<!&)#(\w+)/", "<a href=\"https://twitter.com/search?q=\\1\" class=\"". self::POST_TYPE_SLUG ."-tag\">#\\1</a>", $content );
-			}
+			$content = preg_replace( "/\s@(\w+)/",     " <a href=\"https://twitter.com/\\1\" rel=\"nofollow\" class=\"". self::POST_TYPE_SLUG ."-username\">@\\1</a>", $content );
+			$content = preg_replace( "/(?<!&)#(\w+)/", "<a href=\"https://twitter.com/search?q=\\1\" class=\"". self::POST_TYPE_SLUG ."-tag\">#\\1</a>", $content );
+			// todo switch to multiline
 
 			return $content;
 		}
@@ -373,18 +372,12 @@ if ( ! class_exists( 'TGGRSourceTwitter' ) ) {
 		 *
 		 * @mvc Model
 		 *
-		 * @param array  $prepared_post
-		 * @param array  $unprepared_post
-		 * @param string $context
+		 * @param array $item
 		 *
 		 * @return array
 		 */
-		public function get_extra_item_data( $prepared_post, $unprepared_post, $context ) {
-			if ( self::POST_TYPE_SLUG !== $unprepared_post['post_type'] ) {
-				return $prepared_post;
-			}
-
-			$postmeta = get_post_custom( $unprepared_post['ID'] );
+		public function add_item_meta_data( $item ) {
+			$postmeta = get_post_custom( $item['ID'] );
 
 			$author = array(
 				'name'     => $postmeta['author_name'][0],
@@ -392,16 +385,18 @@ if ( ! class_exists( 'TGGRSourceTwitter' ) ) {
 				'image'    => $postmeta['author_image_url'][0],
 			);
 
-			$prepared_post['itemMeta'] = array(
+			$item['itemMeta'] = array(
 				'tweetId'         => $postmeta['source_id'][0],
 				'mediaPermalink'  => sprintf( 'https://twitter.com/%s/status/%s', $postmeta['author_username'][0], $postmeta['source_id'][0] ),
 				'author'           => $author,
 				'media'            => isset( $postmeta['media'][0] ) ? maybe_unserialize( $postmeta['media'][0] ) : array(),
-				'cssClasses'       => self::get_css_classes( $unprepared_post['ID'], $postmeta['author_username'][0] ),
-				'showExcerpt'      => self::show_excerpt( $unprepared_post ),
+				'cssClasses'       => self::get_css_classes( $item['ID'], $postmeta['author_username'][0] ),
+				'showExcerpt'      => self::show_excerpt( $item['post_content'] ),
 			);
 
-			return $prepared_post;
+			// todo realign
+
+			return $item;
 		}
 	} // end TGGRSourceTwitter
 }

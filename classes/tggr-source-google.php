@@ -60,7 +60,7 @@ if ( ! class_exists( 'TGGRSourceGoogle' ) ) {
 			add_action( 'init',                                       array( $this, 'init' ) );
 			add_action( 'admin_init',                                 array( $this, 'register_settings' ) );
 			add_filter( Tagregator::PREFIX . 'default_settings',      __CLASS__ . '::register_default_settings' );
-			add_filter( 'the_content',                                __CLASS__ . '::convert_urls_to_links', 9 );    // before wp_texturize() to avoid malformed links. see https://core.trac.wordpress.org/ticket/17097#comment:1
+			add_filter( 'tagregator_content',                         __CLASS__ . '::convert_urls_to_links' );
 			add_filter( 'excerpt_length',                             __CLASS__ . '::get_excerpt_length' );
 			add_filter( 'json_pre_dispatch',                          __CLASS__ . '::remove_excerpt_more_link', 10, 2 );
 			add_filter( 'json_prepare_post',                          array( $this, 'get_extra_item_data' ), 10, 3 );
@@ -250,18 +250,12 @@ if ( ! class_exists( 'TGGRSourceGoogle' ) ) {
 		 *
 		 * @mvc Model
 		 *
-		 * @param array  $prepared_post
-		 * @param array  $unprepared_post
-		 * @param string $context
+		 * @param array $item
 		 *
 		 * @return array
 		 */
-		public function get_extra_item_data( $prepared_post, $unprepared_post, $context ) {
-			if ( self::POST_TYPE_SLUG !== $unprepared_post['post_type'] ) {
-				return $prepared_post;
-			}
-
-			$postmeta = get_post_custom( $unprepared_post['ID'] );
+		public function add_item_meta_data( $item ) {
+			$postmeta = get_post_custom( $item['ID'] );
 
 			$author = array(
 				'name'     => $postmeta['author_name'][0],
@@ -269,16 +263,16 @@ if ( ! class_exists( 'TGGRSourceGoogle' ) ) {
 				'image'    => $postmeta['author_image_url'][0],
 			);
 
-			$prepared_post['itemMeta'] = array(
+			$item['itemMeta'] = array(
 				'sourceId'         => $postmeta['source_id'][0],
 				'mediaPermalink'   => $postmeta['post_permalink'][0],
 				'author'           => $author,
 				'media'            => isset( $postmeta['media'][0] ) ? maybe_unserialize( $postmeta['media'][0] ) : array(),
-				'cssClasses'       => self::get_css_classes( $unprepared_post['ID'], $postmeta['author_name'][0] ),
-				'showExcerpt'      => self::show_excerpt( $unprepared_post ),
+				'cssClasses'       => self::get_css_classes( $item['ID'], $postmeta['author_name'][0] ),
+				'showExcerpt'      => self::show_excerpt( $item['post_content'] ),
 			);
 
-			return $prepared_post;
+			return $item;
 		}
 	} // end TGGRSourceGoogle
 }

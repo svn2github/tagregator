@@ -16,7 +16,7 @@ export default React.createClass({
 			return null;
 		}
 		let author = item.itemMeta.author;
-		let content = item.itemMeta.showExcerpt ? item.excerpt : item.content;
+		let content = item.itemMeta.showExcerpt ? item.post_excerpt : item.post_content;
 
 		let media = item.itemMeta.media.map( ( image, i ) => {
 			let img;
@@ -48,7 +48,7 @@ export default React.createClass({
 				</ul>
 
 				<a href={ item.itemMeta.mediaPermalink } rel="nofollow" className="tggr-timestamp">
-					{ this.getTimeDiff( item.date_gmt ) }
+					{ this.getTimeDiff( item.post_date_gmt ) }
 				</a>
 
 				<img className="tggr-source-logo" src={ tggrData.logos.twitter } alt="Twitter" />

@@ -16,15 +16,10 @@ var _get = function( url, data ) {
 export default {
 	// Get a list of tweets according to args criteria
 	getItems: function( args ) {
-		let url = `${tggrData.ApiUrl}/posts/`;
+		let url = `${tggrData.ApiUrl}/tagregator/v1/items`;
 
-		args = args || {};
-		args.type = tggrData.mediaTypes;
-		args.filter = args.filter || {};
-		args.filter.posts_per_page = 50;
-		args.filter.hashtag = tggrData.hashtag;
-		args.filter.orderby = 'date';
-		args.filter.order = 'DESC';
+		args          = args || {};
+		args.hashtags = tggrData.hashtags.split( ',' );
 
 		jQuery.when(
 			_get( url, args )
