@@ -581,7 +581,7 @@ if ( ! class_exists( 'TGGRMediaSource' ) ) {
 		 */
 		public static function get_excerpt_length( $number_words ) {
 			global $post;
-			$class = get_called_class();
+			$class               = get_called_class();
 			$average_word_length = 5; // in the most common western languages
 
 			if ( ! empty( $post->post_type ) && $class::POST_TYPE_SLUG == $post->post_type ) {

@@ -46,14 +46,12 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 		 * @mvc Controller
 		 */
 		public function register_hook_callbacks() {
-			add_action( 'init',                                                              array( $this, 'init' ) );
-			add_action( 'rest_api_init',                                                     array( $this, 'register_rest_routes' ) );
-			add_action( 'save_post',                                                         array( $this, 'prefetch_media_items' ), 10, 2 );
-			add_filter( 'body_class',                                                        array( $this, 'add_body_classes' ) );
+			add_action( 'init',          array( $this, 'init'                 )        );
+			add_action( 'rest_api_init', array( $this, 'register_rest_routes' )        );
+			add_action( 'save_post',     array( $this, 'prefetch_media_items' ), 10, 2 );
+			add_filter( 'body_class',    array( $this, 'add_body_classes'     )        );
 
-			add_shortcode( self::SHORTCODE_NAME,                                             array( $this, 'shortcode_tagregator' ) );
-
-			// todo realign
+			add_shortcode( self::SHORTCODE_NAME, array( $this, 'shortcode_tagregator' ) );
 		}
 
 		/**
@@ -130,8 +128,7 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 
 			$attributes = shortcode_atts( array(
 				'hashtags' => '',
-				'layout'  => 'three-column',
-				// todo realign
+				'layout'   => 'three-column',
 			), $attributes );
 
 			if ( ! in_array( $attributes['layout'], array( 'one-column', 'two-column', 'three-column' ) ) ) {

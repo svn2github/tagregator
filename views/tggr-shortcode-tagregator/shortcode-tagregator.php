@@ -9,12 +9,10 @@
 
 <script type="text/javascript">
 	var tggrData = {
-		ApiUrl:          '<?php echo esc_url( get_json_url() );        ?>',
-		logos:            <?php echo wp_json_encode( $logos );         ?>,
+		ApiUrl:          '<?php echo esc_url( get_json_url() );         ?>',
+		logos:            <?php echo wp_json_encode( $logos );          ?>,
 		hashtags:        '<?php echo esc_js( $attributes['hashtags'] ); ?>',
-		layout:          '<?php echo esc_js( $attributes['layout'] );  ?>',
-		refreshInterval: <?php echo esc_js( $this->refresh_interval ); ?>
+		layout:          '<?php echo esc_js( $attributes['layout'] );   ?>',
+		refreshInterval:  <?php echo esc_js( $this->refresh_interval ); ?>
 	};
-
-	// todo realign
 </script>

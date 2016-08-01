@@ -386,15 +386,13 @@ if ( ! class_exists( 'TGGRSourceTwitter' ) ) {
 			);
 
 			$item['itemMeta'] = array(
-				'tweetId'         => $postmeta['source_id'][0],
-				'mediaPermalink'  => sprintf( 'https://twitter.com/%s/status/%s', $postmeta['author_username'][0], $postmeta['source_id'][0] ),
-				'author'           => $author,
-				'media'            => isset( $postmeta['media'][0] ) ? maybe_unserialize( $postmeta['media'][0] ) : array(),
-				'cssClasses'       => self::get_css_classes( $item['ID'], $postmeta['author_username'][0] ),
-				'showExcerpt'      => self::show_excerpt( $item['post_content'] ),
+				'tweetId'        => $postmeta['source_id'][0],
+				'mediaPermalink' => sprintf( 'https://twitter.com/%s/status/%s', $postmeta['author_username'][0], $postmeta['source_id'][0] ),
+				'author'         => $author,
+				'media'          => isset( $postmeta['media'][0] ) ? maybe_unserialize( $postmeta['media'][0] ) : array(),
+				'cssClasses'     => self::get_css_classes( $item['ID'], $postmeta['author_username'][0] ),
+				'showExcerpt'    => self::show_excerpt( $item['post_content'] ),
 			);
-
-			// todo realign
 
 			return $item;
 		}
