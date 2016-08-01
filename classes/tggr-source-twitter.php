@@ -340,9 +340,17 @@ if ( ! class_exists( 'TGGRSourceTwitter' ) ) {
 		 * @return string
 		 */
 		public static function link_hashtags_and_usernames( $content ) {
-			$content = preg_replace( "/\s@(\w+)/",     " <a href=\"https://twitter.com/\\1\" rel=\"nofollow\" class=\"". self::POST_TYPE_SLUG ."-username\">@\\1</a>", $content );
-			$content = preg_replace( "/(?<!&)#(\w+)/", "<a href=\"https://twitter.com/search?q=\\1\" class=\"". self::POST_TYPE_SLUG ."-tag\">#\\1</a>", $content );
-			// todo switch to multiline
+			$content = preg_replace(
+				"/\s@(\w+)/",
+				" <a href=\"https://twitter.com/\\1\" rel=\"nofollow\" class=\"". self::POST_TYPE_SLUG ."-username\">@\\1</a>",
+				$content
+			);
+
+			$content = preg_replace(
+				"/(?<!&)#(\w+)/",
+				"<a href=\"https://twitter.com/search?q=\\1\" class=\"". self::POST_TYPE_SLUG ."-tag\">#\\1</a>",
+				$content
+			);
 
 			return $content;
 		}
