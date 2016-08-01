@@ -161,10 +161,10 @@ Version 0.6 returns to a Masonry layout.
 = 0.5 =
 Version 0.5 adds support for Google+.
 
-= 0.4 = 
+= 0.4 =
 Version 0.4 adds support for Flickr and fixes a few bugs.
 
-= 0.3 = 
+= 0.3 =
 Version 0.3 has a new single-column design and support for Instagram.
 
 = 0.2 =

@@ -13,7 +13,7 @@
 * If JSON request fails for any reason, then no future requests are made
 * Can tag v1.0 when these are done
 
-	
+
 == Contributions / Feedback ==
 * do "x new posts" at top instead of automatically inserting them, ala twitter
 * replace PREFIX w/ "tggr" in places users will expect, like filter names. makes it easier for someone to grep the code for something they're looking for. maybe remove the constant completely.

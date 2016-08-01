@@ -37,7 +37,7 @@ export default React.createClass({
 				<div className="tggr-item-content">
 					<div dangerouslySetInnerHTML={ this.getContent( content ) } />
 					{ item.itemMeta.showExcerpt && <p><a href={ item.itemMeta.mediaPermalink } rel="nofollow">Read the rest of this tweet on Twitter</a></p> }
-					
+
 					{ media }
 				</div>
 

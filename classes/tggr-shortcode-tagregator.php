@@ -13,7 +13,7 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 		protected $refresh_interval, $post_types_to_class_names, $view_folder;		// $refresh_interval is in seconds
 		protected static $readable_properties  = array( 'refresh_interval', 'view_folder' );
 		protected static $writeable_properties = array( 'refresh_interval' );
-		
+
 		const SHORTCODE_NAME = 'tagregator';
 
 		/**
@@ -125,7 +125,7 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 			foreach ( Tagregator::get_instance()->media_sources as $source ) {
 				$media_sources[] = $source::POST_TYPE_SLUG;
 			};
-			
+
 			$logos = array(
 				'twitter'   => plugins_url( 'images/source-logos/twitter.png',     __DIR__ ),
 				'instagram' => plugins_url( 'images/source-logos/instagram.png',   __DIR__ ),
@@ -162,7 +162,7 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 		 * well in order to allow parallel requests for different hashtags, but that would require handling the case
 		 * where multiple hashtags are used in one or both requests, which would complicate things without adding
 		 * much benefit.
-		 * 
+		 *
 		 * @param string $hashtags Comma-separated list of hashtags
 		 * @param string $rate_limit 'respect' to enforce the rate limit, or 'ignore' to ignore it
 		 */
@@ -179,7 +179,7 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 
 			if ( 'ignore' == $rate_limit || self::refresh_interval_elapsed( $last_fetch, $this->refresh_interval ) ) {
 				set_transient( Tagregator::PREFIX . 'last_media_fetch', microtime( true ) );	// do this right away to minimize the chance of race conditions on systems that don't support the Semaphore module
-				
+
 				foreach ( Tagregator::get_instance()->media_sources as $source ) {
 					foreach( $hashtags as $hashtag ) {
 						$source->import_new_items( trim( $hashtag ) );
@@ -216,20 +216,20 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 			$class_name = $this->post_types_to_class_names[ $post_type ];
 			return $class_name::get_instance()->view_folder;
 		}
-		
+
 		/**
 		 * Fetches media items for a given hashtag when a post is saved, so that they'll be available immediately when the shortcode is displayed for the first time
 		 * Note that this works, even though it often appears to do nothing. The problem is that Twitter's search API often returns no results,
 		 * even when matching tweets exist. See https://dev.twitter.com/docs/faq#8650 more for details.
-		 * 
+		 *
 		 * @Controller
-		 * 
+		 *
 		 * @param int $post_id
 		 * @param WP_Post $post
 		 */
 		public function prefetch_media_items( $post_id, $post ) {
 			$ignored_actions = array( 'trash', 'untrash', 'restore' );
-			
+
 			if ( 1 !== did_action( 'save_post' ) ) {
 				return;
 			}
@@ -237,13 +237,13 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 			if ( isset( $_GET['action'] ) && in_array( $_GET['action'], $ignored_actions ) ) {
 				return;
 			}
-			
+
 			if ( ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || ! $post || $post->post_status == 'auto-draft' ) {
 				return;
 			}
-			
+
 			preg_match_all( '/' . get_shortcode_regex() . '/s', $post->post_content, $shortcodes, PREG_SET_ORDER );
-			
+
 			foreach ( $shortcodes as $shortcode ) {
 				if ( self::SHORTCODE_NAME == $shortcode[2] ) {
 					$attributes = shortcode_parse_atts( $shortcode[3] );

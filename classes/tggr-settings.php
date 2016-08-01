@@ -13,7 +13,7 @@ if ( ! class_exists( 'TGGRSettings' ) ) {
 		protected static $default_settings;
 		protected static $readable_properties  = array( 'settings' );
 		protected static $writeable_properties = array( 'settings' );
-		
+
 		const REQUIRED_CAPABILITY = 'manage_options';
 		const MENU_SLUG           = 'tagregator';
 		const SETTING_SLUG        = 'tggr_settings';

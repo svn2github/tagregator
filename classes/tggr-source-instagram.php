@@ -33,7 +33,7 @@ if ( ! class_exists( 'TGGRSourceInstagram' ) ) {
 				$this->default_settings[ strtolower( str_replace( ' ', '_', $key ) ) ] = '';
 			}
 			$this->default_settings[ '_newest_media_id' ] = 0;
-			
+
 			$this->register_hook_callbacks();
 		}
 
@@ -178,13 +178,13 @@ if ( ! class_exists( 'TGGRSourceInstagram' ) ) {
 		 */
 		public function convert_items_to_posts( $items, $term ) {
 			$posts = array();
-			
+
 			if ( $items ) {
 				foreach ( $items as $item ) {
 					$post_timestamp_gmt   = absint( $item->created_time );
 					$post_timestamp_local = self::convert_gmt_timestamp_to_local( $post_timestamp_gmt );
 					$post_content         = isset( $item->caption->text ) ? $item->caption->text : '';
-					
+
 					$post = array(
 						'post_author'   => TGGRMediaSource::$post_author_id,
 						'post_content'  => wp_kses( $post_content, wp_kses_allowed_html( 'data' ), array( 'http', 'https', 'mailto' ) ),
@@ -256,7 +256,7 @@ if ( ! class_exists( 'TGGRSourceInstagram' ) ) {
 		 */
 		protected static function update_newest_media_id( $hashtag ) {
 			$latest_post = self::get_latest_hashtagged_post( self::POST_TYPE_SLUG, $hashtag );
-	
+
 			if ( isset( $latest_post->ID ) ) {
 				$source_id = get_post_meta( $latest_post->ID, 'source_id', true );
 

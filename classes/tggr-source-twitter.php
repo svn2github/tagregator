@@ -331,7 +331,7 @@ if ( ! class_exists( 'TGGRSourceTwitter' ) ) {
 		/**
 		 * Convert usernames and hashtags to links
 		 * @mvc Model
-		 * 
+		 *
 		 * @link http://snipplr.com/view.php?codeview&id=28482 Based on
 		 * @link https://gist.github.com/georgestephanis/6567420 Based on
 		 * @param string $text
@@ -344,7 +344,7 @@ if ( ! class_exists( 'TGGRSourceTwitter' ) ) {
 				$content = preg_replace( "/\s@(\w+)/",     "<a href=\"https://twitter.com/\\1\" rel=\"nofollow\" class=\"". self::POST_TYPE_SLUG ."-username\">@\\1</a>", $content );
 				$content = preg_replace( "/(?<!&)#(\w+)/", "<a href=\"https://twitter.com/search?q=\\1\" class=\"". self::POST_TYPE_SLUG ."-tag\">#\\1</a>", $content );
 			}
-			
+
 			return $content;
 		}
 
@@ -356,7 +356,7 @@ if ( ! class_exists( 'TGGRSourceTwitter' ) ) {
 		 */
 		protected static function update_newest_tweet_id( $hashtag ) {
 			$latest_post = self::get_latest_hashtagged_post( self::POST_TYPE_SLUG, $hashtag );
-	
+
 			if ( isset( $latest_post->ID ) ) {
 				$source_id = get_post_meta( $latest_post->ID, 'source_id', true );
 
