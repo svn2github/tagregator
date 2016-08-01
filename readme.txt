@@ -75,6 +75,12 @@ This is probably because you haven't configured your timezone in WordPress's Gen
 = Why are some Tweets missing? =
 Twitter's API doesn't guarantee that every tweet will be available in the results it returns.
 
+= New items aren't being updated in real time =
+
+If you're using a caching service or plugin, then logged-out visitors might only see updates periodically.
+The best solution is to configure the caching service to purge its cache of `/wp-json/tagregator/v1/items` every 30 seconds.
+If that's not possible, then you could configure it to not cache `/wp-json/tagregator/v1/items` at all.
+
 = I liked the single-column look of versions 0.4 and 0.5 better, how can I get that back? =
 You can achieve a similar look by specifying `one-column` in the shortcode's `layout` parameter:
 
