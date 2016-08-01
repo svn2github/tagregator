@@ -581,6 +581,7 @@ if ( ! class_exists( 'TGGRMediaSource' ) ) {
 		 */
 		public static function get_excerpt_length( $number_words ) {
 			global $post;
+
 			$class               = get_called_class();
 			$average_word_length = 5; // in the most common western languages
 
@@ -623,7 +624,7 @@ if ( ! class_exists( 'TGGRMediaSource' ) ) {
 			$class = get_called_class();
 
 			if ( '/posts' === $response_handler->path && ! empty( $response_handler->params['GET']['type'] ) ) {
-				if ( in_array( $class::POST_TYPE_SLUG, $response_handler->params['GET']['type'], true ) ) {
+				if ( in_array( $class::POST_TYPE_SLUG, (array) $response_handler->params['GET']['type'], true ) ) {
 					remove_all_filters( 'excerpt_more' );
 				}
 			}
