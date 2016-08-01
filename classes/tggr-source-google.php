@@ -77,15 +77,15 @@ if ( ! class_exists( 'TGGRSourceGoogle' ) ) {
 		 * @mvc Controller
 		 */
 		public function init() {
-			self::register_post_type( 
-				self::POST_TYPE_SLUG, 
-				$this->get_post_type_params( 
-					self::POST_TYPE_SLUG, 
-					self::POST_TYPE_NAME_SINGULAR, 
-					self::POST_TYPE_NAME_PLURAL 
-				) 
+			self::register_post_type(
+				self::POST_TYPE_SLUG,
+				$this->get_post_type_params(
+					self::POST_TYPE_SLUG,
+					self::POST_TYPE_NAME_SINGULAR,
+					self::POST_TYPE_NAME_PLURAL
+				)
 			);
-			self::create_post_author();   
+			self::create_post_author();
 			self::get_post_author_user_id();
 		}
 
@@ -98,7 +98,7 @@ if ( ! class_exists( 'TGGRSourceGoogle' ) ) {
 		public function upgrade( $db_version = 0 ) {}
 
 		/**
-		 * Validates submitted setting values before they get saved to the database. 
+		 * Validates submitted setting values before they get saved to the database.
 		 * Invalid data will be overwritten with defaults.
 		 * @mvc Model
 		 *
