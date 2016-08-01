@@ -297,19 +297,6 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 		}
 
 		/**
-		 * Determines the path to a media source's view folder based on the post type
-		 *
-		 * @param string $post_type
-		 * @return string
-		 */
-		protected function get_view_folder_from_post_type( $post_type ) {
-			$class_name = $this->post_types_to_class_names[ $post_type ];
-			return $class_name::get_instance()->view_folder;
-
-			// todo is dead and can be removed
-		}
-
-		/**
 		 * Fetches media items for a given hashtag when a post is saved, so that they'll be available immediately when the shortcode is displayed for the first time
 		 * Note that this works, even though it often appears to do nothing. The problem is that Twitter's search API often returns no results,
 		 * even when matching tweets exist. See https://dev.twitter.com/docs/faq#8650 more for details.
