@@ -164,7 +164,7 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 		public function rest_get_items( $request ) {
 			$source_post_types    = array();
 			$source_post_type_map = array();
-			$hashtags             = $request->get_param( 'hashtags' );
+			$hashtags             = (array) $request->get_param( 'hashtags' );
 			$valid_fields         = array( 'ID', 'post_content', 'post_excerpt', 'post_title', 'post_type', 'post_date_gmt' );
 
 			foreach ( Tagregator::get_instance()->media_sources as $source ) {
