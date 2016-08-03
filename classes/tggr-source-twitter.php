@@ -59,19 +59,20 @@ if ( ! class_exists( 'TGGRSourceTwitter' ) ) {
 		 * @mvc Controller
 		 */
 		public function register_hook_callbacks() {
-			add_action( 'init',                                       array( $this, 'init' ) );
+			add_action( 'init',                                       array( $this, 'init'              ) );
 			add_action( 'admin_init',                                 array( $this, 'register_settings' ) );
-			add_filter( Tagregator::PREFIX . 'default_settings',      __CLASS__ . '::register_default_settings' );
-			add_filter( 'update_option_'. TGGRSettings::SETTING_SLUG, __CLASS__ . '::obtain_bearer_token', 10, 2 );
-			add_filter( 'tagregator_content',                         __CLASS__ . '::convert_urls_to_links' );
-			add_filter( 'tagregator_content',                         __CLASS__ . '::link_hashtags_and_usernames' );
-			add_filter( 'excerpt_length',                             __CLASS__ . '::get_excerpt_length' );
+
+			add_filter( Tagregator::PREFIX . 'default_settings',      __CLASS__ . '::register_default_settings'         );
+			add_filter( 'update_option_'. TGGRSettings::SETTING_SLUG, __CLASS__ . '::obtain_bearer_token',        10, 2 );
+			add_filter( 'tagregator_content',                         __CLASS__ . '::convert_urls_to_links'             );
+			add_filter( 'tagregator_content',                         __CLASS__ . '::link_hashtags_and_usernames'       );
+			add_filter( 'excerpt_length',                             __CLASS__ . '::get_excerpt_length'                );
 
 			// Post screen columns
-			add_filter( 'manage_edit-' . self::POST_TYPE_SLUG . '_columns',             __CLASS__ . '::add_columns' );
-			add_filter( 'manage_edit-' . self::POST_TYPE_SLUG . '_sortable_columns',    __CLASS__ . '::add_columns' );
+			add_filter( 'manage_edit-' . self::POST_TYPE_SLUG . '_columns',             __CLASS__ . '::add_columns'            );
+			add_filter( 'manage_edit-' . self::POST_TYPE_SLUG . '_sortable_columns',    __CLASS__ . '::add_columns'            );
 			add_action( 'manage_' .      self::POST_TYPE_SLUG . '_posts_custom_column', __CLASS__ . '::display_columns', 10, 2 );
-			add_filter( 'request',                                                      __CLASS__ . '::sort_by_author' );
+			add_filter( 'request',                                                      __CLASS__ . '::sort_by_author'         );
 		}
 
 		/**
@@ -79,7 +80,15 @@ if ( ! class_exists( 'TGGRSourceTwitter' ) ) {
 		 * @mvc Controller
 		 */
 		public function init() {
-			self::register_post_type( self::POST_TYPE_SLUG, $this->get_post_type_params( self::POST_TYPE_SLUG, self::POST_TYPE_NAME_SINGULAR, self::POST_TYPE_NAME_PLURAL ) );
+			self::register_post_type(
+				self::POST_TYPE_SLUG,
+				$this->get_post_type_params(
+					self::POST_TYPE_SLUG,
+					self::POST_TYPE_NAME_SINGULAR,
+					self::POST_TYPE_NAME_PLURAL
+				)
+			);
+
 			self::create_post_author();   // It should already exist from the first time this class was instantiated, but we need to make sure it still exists now
 			self::get_post_author_user_id();
 		}

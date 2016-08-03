@@ -57,18 +57,18 @@ if ( ! class_exists( 'TGGRSourceGoogle' ) ) {
 		 * @mvc Controller
 		 */
 		public function register_hook_callbacks() {
-			add_action( 'init',                                       array( $this, 'init' ) );
+			add_action( 'init',                                       array( $this, 'init'              ) );
 			add_action( 'admin_init',                                 array( $this, 'register_settings' ) );
+
 			add_filter( Tagregator::PREFIX . 'default_settings',      __CLASS__ . '::register_default_settings' );
-			add_filter( 'tagregator_content',                         __CLASS__ . '::convert_urls_to_links' );
-			add_filter( 'excerpt_length',                             __CLASS__ . '::get_excerpt_length' );
-			// todo realign
+			add_filter( 'tagregator_content',                         __CLASS__ . '::convert_urls_to_links'     );
+			add_filter( 'excerpt_length',                             __CLASS__ . '::get_excerpt_length'        );
 
 			// Post screen columns
-			add_filter( 'manage_edit-' . self::POST_TYPE_SLUG . '_columns',             __CLASS__ . '::add_columns' );
-			add_filter( 'manage_edit-' . self::POST_TYPE_SLUG . '_sortable_columns',    __CLASS__ . '::add_columns' );
+			add_filter( 'manage_edit-' . self::POST_TYPE_SLUG . '_columns',             __CLASS__ . '::add_columns'            );
+			add_filter( 'manage_edit-' . self::POST_TYPE_SLUG . '_sortable_columns',    __CLASS__ . '::add_columns'            );
 			add_action( 'manage_' .      self::POST_TYPE_SLUG . '_posts_custom_column', __CLASS__ . '::display_columns', 10, 2 );
-			add_filter( 'request',                                                      __CLASS__ . '::sort_by_author' );
+			add_filter( 'request',                                                      __CLASS__ . '::sort_by_author'         );
 		}
 
 		/**
@@ -84,6 +84,7 @@ if ( ! class_exists( 'TGGRSourceGoogle' ) ) {
 					self::POST_TYPE_NAME_PLURAL
 				)
 			);
+
 			self::create_post_author();
 			self::get_post_author_user_id();
 		}
