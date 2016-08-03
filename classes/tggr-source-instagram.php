@@ -64,8 +64,7 @@ if ( ! class_exists( 'TGGRSourceInstagram' ) ) {
 			add_filter( 'tagregator_content',                                 __CLASS__ . '::convert_urls_to_links' );
 			add_filter( 'tagregator_content',                                 __CLASS__ . '::link_usernames' );
 			add_filter( 'excerpt_length',                                     __CLASS__ . '::get_excerpt_length' );
-			add_filter( 'json_pre_dispatch',                                  __CLASS__ . '::remove_excerpt_more_link', 10, 2 );
-			add_filter( 'json_prepare_post',                                  array( $this, 'get_extra_item_data' ), 10, 3 );
+			// todo realign
 
 			// Post screen columns
 			add_filter( 'manage_edit-' . self::POST_TYPE_SLUG . '_columns',             __CLASS__ . '::add_columns' );

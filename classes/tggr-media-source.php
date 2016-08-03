@@ -608,28 +608,5 @@ if ( ! class_exists( 'TGGRMediaSource' ) ) {
 
 			return $length > self::POST_CONTENT_LENGTH_DISPLAY_LIMIT;
 		}
-
-		/**
-		 * Remove the 'Continue reading...' links on excerpts
-		 *
-		 * They're not appropriate in this context because they link to the current site instead of the external
-		 * source.
-		 *
-		 * @param mixed                   $result
-		 * @param WP_JSON_ResponseHandler $response_handler
-		 *
-		 * @return mixed
-		 */
-		public static function remove_excerpt_more_link( $result, $response_handler ) {
-			$class = get_called_class();
-
-			if ( '/posts' === $response_handler->path && ! empty( $response_handler->params['GET']['type'] ) ) {
-				if ( in_array( $class::POST_TYPE_SLUG, (array) $response_handler->params['GET']['type'], true ) ) {
-					remove_all_filters( 'excerpt_more' );
-				}
-			}
-
-			return $result;
-		}
 	} // end TGGRModule
 }
