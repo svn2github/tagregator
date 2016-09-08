@@ -16,7 +16,7 @@ var _get = function( url, data ) {
 export default {
 	// Get a list of tweets according to args criteria
 	getItems: function( args ) {
-		let url = `${tggrData.ApiUrl}/tagregator/v1/items`;
+		let url = `${tggrData.ApiUrl}tagregator/v1/items`;
 
 		args          = args || {};
 		args.hashtags = tggrData.hashtags.split( ',' );
