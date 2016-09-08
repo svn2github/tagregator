@@ -9,7 +9,7 @@
 
 <script type="text/javascript">
 	var tggrData = {
-		ApiUrl:          '<?php echo esc_url( get_json_url() );         ?>',
+		ApiUrl:          '<?php echo esc_url( get_rest_url() );         ?>',
 		logos:            <?php echo wp_json_encode( $logos );          ?>,
 		hashtags:        '<?php echo esc_js( $attributes['hashtags'] ); ?>',
 		layout:          '<?php echo esc_js( $attributes['layout'] );   ?>',
