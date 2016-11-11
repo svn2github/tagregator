@@ -1,5 +1,7 @@
 <?php
 
+// todo Instagram requires oAuth now, so this is broken == https://wordpress.org/support/topic/instagram-issuses/#post-8425118
+
 if ( $_SERVER['SCRIPT_FILENAME'] == __FILE__ )
 	die( 'Access denied.' );
 

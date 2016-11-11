@@ -1,4 +1,5 @@
 == High Priority ==
+* Automatically delete old posts from the db, keep it to 500 max by default, but have a filter to change option -- https://wordpress.org/support/topic/this-plugin-is-broken-8/
 * integrate `nsp check` from https://nodesecurity.io/ into build process
 * Boxes don't stack cleanly now that not using masonary
 	* Maybe fix with different Flexbox layout, or CSS3 Columns. If not just re-enable masonry.

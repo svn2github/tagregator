@@ -26,6 +26,8 @@ export default React.createClass({
 			return img;
 		} );
 
+		// todo maybe change star icon to heart -- https://wordpress.org/support/topic/twitter-stars-should-be-hearts/
+
 		return (
 			<div className={ item.itemMeta.cssClasses }>
 				<a className="tggr-author-profile clearfix" href={ url + author.username } rel="nofollow">
