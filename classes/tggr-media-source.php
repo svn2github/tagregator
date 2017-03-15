@@ -159,11 +159,12 @@ if ( ! class_exists( 'TGGRMediaSource' ) ) {
 		public static function sort_by_author( $query_vars ) {
 			$class = get_called_class();
 
-			if ( array_key_exists( 'orderby', $query_vars ) && $class::POST_TYPE_SLUG == $query_vars['post_type'] ) {
-				if ( 'Author' == $query_vars['orderby'] ) {
-					$query_vars['orderby']  = 'meta_value';
-					$query_vars['meta_key'] = self::get_author_username_key( $class );
-				}
+			if ( isset( $query_vars['orderby'], $query_vars['post_type'] ) &&
+			     $class::POST_TYPE_SLUG == $query_vars['post_type'] &&
+			     'Author' == $query_vars['orderby'] ) {
+
+				$query_vars['orderby']  = 'meta_value';
+				$query_vars['meta_key'] = self::get_author_username_key( $class );
 			}
 
 			return $query_vars;

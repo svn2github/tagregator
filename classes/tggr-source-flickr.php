@@ -69,7 +69,10 @@ if ( ! class_exists( 'TGGRSourceFlickr' ) ) {
 			add_filter( 'manage_edit-' . self::POST_TYPE_SLUG . '_columns',             __CLASS__ . '::add_columns'            );
 			add_filter( 'manage_edit-' . self::POST_TYPE_SLUG . '_sortable_columns',    __CLASS__ . '::add_columns'            );
 			add_action( 'manage_' .      self::POST_TYPE_SLUG . '_posts_custom_column', __CLASS__ . '::display_columns', 10, 2 );
-			add_filter( 'request',                                                      __CLASS__ . '::sort_by_author'         );
+
+			if ( is_admin() ) {
+				add_filter( 'request', __CLASS__ . '::sort_by_author' );
+			}
 		}
 
 		/**
