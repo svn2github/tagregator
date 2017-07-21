@@ -1,1 +1,1 @@
-<p>You can obtain the settings below by <a href="https://dev.twitter.com/apps/new">creating a new application</a> at Twitter's developer portal. For detailed instructions, please see <a href="https://wordpress.org/plugins/tagregator/installation/">the Installation page</a>.</p>
+<p>You can obtain the settings below by <a href="https://apps.twitter.com/">creating a new application</a> at Twitter's developer portal. For detailed instructions, please see <a href="https://wordpress.org/plugins/tagregator/installation/">the Installation page</a>.</p>

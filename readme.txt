@@ -27,7 +27,7 @@ For help installing this (or any other) WordPress plugin, please read the [Manag
 
 **Step 1)** After installing the plugin, go to the Tagregator > Settings screen and enter the credentials for the services you want to use.
 
-When <a href="https://dev.twitter.com/apps/new">creating a Twitter application</a>, you should enter the URL of your website in the "Website" field (e.g., `http://www.example.org`), and then leave the "Callback URL" field empty. Once the application is created, copy the Consumer Key and Consumer Secret into Tagregator's settings.
+When <a href="https://apps.twitter.com/">creating a Twitter application</a>, you should enter the URL of your website in the "Website" field (e.g., `http://www.example.org`), and then leave the "Callback URL" field empty. Once the application is created, copy the Consumer Key and Consumer Secret into Tagregator's settings.
 
 **Step 2)** [Add the [tagregator] shortcode to a post or page](https://codex.wordpress.org/Shortcode), and include the hashtag(s) you want to aggregate:
 
