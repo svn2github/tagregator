@@ -4,8 +4,8 @@
   "description": "Aggregates hashtagged content from multiple social media sites into a single stream.",
   "license": "GPL-2.0+",
   "repository": {
-    "type" : "svn",
-    "url" : "http://plugins.svn.wordpress.org/tagregator/trunk/"
+    "type": "svn",
+    "url": "https://plugins.svn.wordpress.org/tagregator/trunk/"
   },
   "main": "index.js",
   "dependencies": {
@@ -45,7 +45,7 @@
     "postcss-loader": "^0.8.0",
     "sass-loader": "^3.1.2",
     "style-loader": "^0.13.0",
-    "system-bell-webpack-plugin" : "^1.0.0",
+    "system-bell-webpack-plugin": "^1.0.0",
     "webpack": "^1.12.2",
     "webpack-dev-server": "^1.15.1"
   }
