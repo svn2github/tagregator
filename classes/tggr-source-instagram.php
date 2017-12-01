@@ -1,7 +1,5 @@
 <?php
 
-// todo Instagram requires oAuth now, so this is broken == https://wordpress.org/support/topic/instagram-issuses/#post-8425118
-
 if ( $_SERVER['SCRIPT_FILENAME'] == __FILE__ )
 	die( 'Access denied.' );
 
@@ -29,11 +27,13 @@ if ( ! class_exists( 'TGGRSourceInstagram' ) ) {
 		 */
 		protected function __construct() {
 			$this->view_folder   = dirname( __DIR__ ) . '/views/'. str_replace( '.php', '', basename( __FILE__ ) );
-			$this->setting_names = array( 'Client ID', 'Highlighted Accounts', 'Banned Accounts', '_newest_media_id' );
+			$this->setting_names = array( 'Client ID', 'Client Secret', 'Access Token', 'Sandbox Mode', 'Highlighted Accounts', 'Banned Accounts', '_newest_media_id' );
 
 			foreach ( $this->setting_names as $key ) {
 				$this->default_settings[ strtolower( str_replace( ' ', '_', $key ) ) ] = '';
 			}
+
+			$this->default_settings[ 'sandbox_mode' ] = 1;
 			$this->default_settings[ '_newest_media_id' ] = 0;
 
 			$this->register_hook_callbacks();
@@ -105,6 +105,90 @@ if ( ! class_exists( 'TGGRSourceInstagram' ) ) {
 		public function upgrade( $db_version = 0 ) {}
 
 		/**
+		 * Adds the section introduction text to the Settings page
+		 * @mvc Controller
+		 *
+		 * @param array $section
+		 */
+		public static function markup_settings_section_header( $section ) {
+			$client_id     = TGGRSettings::get_instance()->settings['TGGRSourceInstagram']['client_id'];
+			$client_secret = TGGRSettings::get_instance()->settings['TGGRSourceInstagram']['client_secret'];
+			$access_token  = TGGRSettings::get_instance()->settings['TGGRSourceInstagram']['access_token'];
+
+			$redirect_url = add_query_arg(
+				array(
+					'page' => 'tggr_settings',
+				),
+				admin_url( 'admin.php' )
+			);
+
+			$authorization_url = '';
+
+			if ( $client_id ) {
+				$authorization_url = add_query_arg(
+					array(
+						'client_id'     => $client_id,
+						'redirect_uri'  => $redirect_url,
+						'response_type' => 'code',
+					),
+					'https://www.instagram.com/oauth/authorize/'
+				);
+			}
+
+			$auth_code  = filter_input( INPUT_GET, 'code', FILTER_SANITIZE_STRING );
+			$auth_error = filter_input( INPUT_GET, 'error', FILTER_SANITIZE_STRING );
+
+			$message = '';
+
+			if ( $auth_code && ! $access_token ) {
+				$url           = 'https://api.instagram.com/oauth/access_token';
+
+				$response = wp_remote_post( $url, array(
+						'method'  => 'POST',
+						'timeout' => 45,
+						'body'    => array(
+							'client_id'     => $client_id,
+							'client_secret' => $client_secret,
+							'grant_type'    => 'authorization_code',
+							'redirect_uri'  => $redirect_url,
+							'code'          => $auth_code,
+						),
+					)
+				);
+
+				if ( is_wp_error( $response ) ) {
+					$message .= sprintf(
+						'Instagram Error: %s',
+						esc_html( $response->get_error_message() )
+					);
+				}
+
+				$response_code = wp_remote_retrieve_response_code( $response );
+
+				if ( 200 === $response_code ) {
+					$json         = json_decode( wp_remote_retrieve_body( $response ), true );
+					$access_token = ( isset( $json['access_token'] ) ) ? $json['access_token'] : '';
+
+					if ( $access_token ) {
+						$settings = TGGRSettings::get_instance()->settings;
+						$settings['TGGRSourceInstagram']['access_token'] = $access_token;
+						TGGRSettings::get_instance()->settings = $settings;
+					} else {
+						$message .= 'Instagram Error: No access token received.';
+					}
+				}
+			} elseif ( $auth_error ) {
+				$message .= sprintf(
+					'Instagram Error: %s',
+					esc_html( filter_input( INPUT_GET, 'error_description', FILTER_SANITIZE_STRING ) )
+				);
+			}
+
+			//parent::markup_settings_section_header( $section );
+			require( self::get_instance()->view_folder . '/page-settings-section-header.php' );
+		}
+
+		/**
 		 * Validates submitted setting values before they get saved to the database. Invalid data will be overwritten with defaults.
 		 * @mvc Model
 		 *
@@ -136,10 +220,16 @@ if ( ! class_exists( 'TGGRSourceInstagram' ) ) {
 		 * @param string $hashtag
 		 */
 		public function import_new_items( $hashtag ) {
+			if ( empty( TGGRSettings::get_instance()->settings[ __CLASS__ ]['client_id'] )
+				|| empty( TGGRSettings::get_instance()->settings[ __CLASS__ ]['access_token'] ) ){
+				return;
+			}
 			$media = self::get_new_media(
 				TGGRSettings::get_instance()->settings[ __CLASS__ ]['client_id'],
+				TGGRSettings::get_instance()->settings[ __CLASS__ ]['access_token'],
 				$hashtag,
-				TGGRSettings::get_instance()->settings[ __CLASS__ ]['_newest_media_id']
+				TGGRSettings::get_instance()->settings[ __CLASS__ ]['_newest_media_id'],
+				TGGRSettings::get_instance()->settings[ __CLASS__ ]['sandbox_mode']
 			);
 			$media = $this->remove_banned_items( $media, 'user', 'username' );
 
@@ -152,20 +242,33 @@ if ( ! class_exists( 'TGGRSourceInstagram' ) ) {
 		 * @mvc Model
 		 *
 		 * @param string $client_id
+		 * @param string $access_token
 		 * @param string $hashtag
+		 * @param string $sandbox_mode
 		 * @param string $max_id The ID of the most recent item that is already saved in the database
 		 * @return mixed string|false
 		 */
-		protected static function get_new_media( $client_id, $hashtag, $max_id ) {
+		protected static function get_new_media( $client_id, $access_token, $hashtag, $max_id, $sandbox_mode ) {
 			$response = $media = false;
 
-			if ( $client_id && $hashtag ) {
-				$url = sprintf(
-					'%s/v1/tags/%s/media/recent?client_id=%s',
-					self::API_URL,
-					urlencode( str_replace( '#', '', $hashtag ) ),
-					urlencode( $client_id )
-				);
+			if ( $access_token && $hashtag ) {
+
+				if ( $sandbox_mode === '0' ){
+					// url for PUBLIC tags // https://api.instagram.com/v1/tags/XXXX/media/recent/?access_token=XXXX
+					$url = sprintf(
+						'%s/v1/tags/%s/media/recent?access_token=%s&count=9',
+						self::API_URL,
+						urlencode( str_replace( '#', '', $hashtag ) ),
+						urlencode( $access_token )
+					);
+				} else {
+					// url for SELF posts https://api.instagram.com/v1/users/self/media/recent/?access_token=XXXX
+					$url = sprintf(
+						'%s/v1/users/self/media/recent?access_token=%s&count=9',
+						self::API_URL,
+						urlencode( $access_token )
+					);
+				}
 
 				$response = wp_remote_get( $url );
 				$body     = json_decode( wp_remote_retrieve_body( $response ) );
@@ -175,7 +278,7 @@ if ( ! class_exists( 'TGGRSourceInstagram' ) ) {
 				}
 			}
 
-			self::log( __METHOD__, 'Results', compact( 'client_id', 'hashtag', 'max_id', 'response' ) );
+			self::log( __METHOD__, 'Results', compact( 'access_token', 'hashtag', 'max_id', 'response' ) );
 
 			return $media;
 		}
