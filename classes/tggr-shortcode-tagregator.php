@@ -258,6 +258,10 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 		 * @param string $rate_limit 'respect' to enforce the rate limit, or 'ignore' to ignore it
 		 */
 		protected function import_new_items( $hashtags, $rate_limit = 'respect' ) {
+			if ( ! $this->is_within_date_range() ) {
+				return;
+			}
+
 			$semaphore_key = (int) base_convert( substr( md5( __METHOD__ . site_url() ), 0, 8 ), 16, 10 );
 			$semaphore_id  = function_exists( 'sem_get' ) ? sem_get( $semaphore_key ) : false;
 
@@ -338,6 +342,39 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 					}
 				}
 			}
+		}
+
+		/**
+		 * Check if the current date is within an optionally specified date range.
+		 *
+		 * @return bool True if the current date is within the date range, or if no date range is specified.
+		 */
+		protected function is_within_date_range() {
+			/**
+			 * Filter: Optionally set a date on which Tagregator will begin importing new items.
+			 *
+			 * @param DateTime|null $start_date The date that Tagregator should start importing items. Default null.
+			 */
+			$start_date = apply_filters( Tagregator::PREFIX . 'start_date', null );
+
+			/**
+			 * Filter: Optionally set a date on which Tagregator will stop importing new items.
+			 *
+			 * @param DateTime|null $end_date The date that Tagregator should stop importing items. Default null.
+			 */
+			$end_date = apply_filters( Tagregator::PREFIX . 'end_date', null );
+
+			$now = new DateTime( 'now' );
+
+			if ( $start_date instanceof DateTime && $now < $start_date ) {
+				return false;
+			}
+
+			if ( $end_date instanceof DateTime && $now > $end_date ) {
+				return false;
+			}
+
+			return true;
 		}
 	} // end TGGRShortcodeTagregator
 }
