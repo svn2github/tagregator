@@ -135,6 +135,9 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 				$attributes['layout'] = 'three-column';
 			}
 
+			$attributes['hashtags'] = $this->normalize_hashtags( $attributes['hashtags'] );
+			$attributes['hashtags'] = implode( ',', $attributes['hashtags'] );
+
 			$media_sources = array();
 			foreach ( Tagregator::get_instance()->media_sources as $source ) {
 				$media_sources[] = $source::POST_TYPE_SLUG;
@@ -153,6 +156,29 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 		}
 
 		/**
+		 * Sanitize and format hashtags.
+		 *
+		 * If the user enters `#foo` as a hashtag, and later changes it to `foo` -- or vice versa -- then two
+		 * `wp_terms` rows would be created, even though they really mean the same thing in this context. Having
+		 * multiple terms can lead to problems with entries not being found by `get_posts()`.
+		 *
+		 * @param $hashtags
+		 *
+		 * @return array
+		 */
+		protected function normalize_hashtags( $hashtags ) {
+			if ( is_string( $hashtags ) ) {
+				$hashtags = explode( ',', $hashtags );
+			}
+
+			foreach ( $hashtags as $index => $hashtag ) {
+				$hashtags[ $index ] = sanitize_text_field( str_replace( '#', '', trim( $hashtag ) ) );
+			}
+
+			return array_unique( $hashtags );
+		}
+
+		/**
 		 * Get recent items from all media sources
 		 *
 		 * @mvc Model
@@ -164,7 +190,7 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 		public function rest_get_items( $request ) {
 			$source_post_types    = array();
 			$source_post_type_map = array();
-			$hashtags             = (array) $request->get_param( 'hashtags' );
+			$hashtags             = $this->normalize_hashtags( (array) $request->get_param( 'hashtags' ) );
 			$valid_fields         = array( 'ID', 'post_content', 'post_excerpt', 'post_title', 'post_type', 'post_date_gmt' );
 
 			foreach ( Tagregator::get_instance()->media_sources as $source ) {
@@ -172,7 +198,6 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 				$source_post_type_map[ $source::POST_TYPE_SLUG ] = $source;
 			}
 
-			$hashtags = array_map( 'sanitize_text_field', $hashtags );
 			self::import_new_items( $hashtags );
 
 			// `tax_query` will return posts matching any term if some of the passed terms don't exist
@@ -276,7 +301,7 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 
 				foreach ( Tagregator::get_instance()->media_sources as $source ) {
 					foreach( $hashtags as $hashtag ) {
-						$source->import_new_items( trim( $hashtag ) );
+						$source->import_new_items( $hashtag );
 					}
 				}
 			}
@@ -338,7 +363,7 @@ if ( ! class_exists( 'TGGRShortcodeTagregator' ) ) {
 					}
 
 					if ( isset( $attributes['hashtags'] ) ) {
-						self::import_new_items( explode( ',', $attributes['hashtags'] ), 'ignore' );
+						self::import_new_items( $this->normalize_hashtags( $attributes['hashtags'] ), 'ignore' );
 					}
 				}
 			}

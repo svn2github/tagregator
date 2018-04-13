@@ -164,7 +164,7 @@ if ( ! class_exists( 'TGGRSourceFlickr' ) ) {
 				$url = sprintf(
 					'%s?method=flickr.photos.search&tags=%s&min_upload_date=%d&extras=date_upload,description,owner_name,url_n,url_l,icon_farm,icon_server&format=json&nojsoncallback=1&api_key=%s',
 					self::API_URL,
-					urlencode( str_replace( '#', '', $hashtag ) ),
+					urlencode( $hashtag ),
 					urlencode( $min_upload_date ),
 					urlencode( $api_key )
 				);

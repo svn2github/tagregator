@@ -258,7 +258,7 @@ if ( ! class_exists( 'TGGRSourceInstagram' ) ) {
 					$url = sprintf(
 						'%s/v1/tags/%s/media/recent?access_token=%s&count=9',
 						self::API_URL,
-						urlencode( str_replace( '#', '', $hashtag ) ),
+						urlencode( $hashtag ),
 						urlencode( $access_token )
 					);
 				} else {
